@@ -1,0 +1,216 @@
+import { Fragment, ReactNode, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { cn } from '../utils';
+import { X } from 'lucide-react';
+import { Button } from './Button';
+import { isWeb, getDocument, getWindow } from '../utils';
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  description?: string;
+  children: ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  showCloseButton?: boolean;
+  closeOnOverlayClick?: boolean;
+  closeOnEscape?: boolean;
+}
+
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  showCloseButton = true,
+  closeOnOverlayClick = true,
+  closeOnEscape = true,
+}: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen && isWeb) {
+      previousActiveElement.current = getDocument()?.activeElement as HTMLElement;
+      const body = getDocument()?.body;
+      if (body) body.style.overflow = 'hidden';
+      modalRef.current?.focus();
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && closeOnEscape) {
+          onClose();
+        }
+        if (e.key === 'Tab') {
+          trapFocus(e);
+        }
+      };
+      
+      getDocument()?.addEventListener('keydown', handleKeyDown);
+      return () => {
+        getDocument()?.removeEventListener('keydown', handleKeyDown);
+        const body = getDocument()?.body;
+        if (body) body.style.overflow = '';
+        previousActiveElement.current?.focus();
+      };
+    }
+  }, [isOpen, closeOnEscape, onClose]);
+
+  const trapFocus = (e: KeyboardEvent) => {
+    if (!modalRef.current || !isWeb) return;
+    const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    if (e.shiftKey && getDocument()?.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement?.focus();
+    } else if (!e.shiftKey && getDocument()?.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement?.focus();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const sizes = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    full: 'max-w-4xl',
+  };
+
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'modal-title' : undefined}
+      aria-describedby={description ? 'modal-description' : undefined}
+    >
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        aria-hidden="true"
+        onClick={closeOnOverlayClick ? onClose : undefined}
+      />
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          ref={modalRef}
+          tabIndex={-1}
+          className={cn(
+            'w-full bg-white dark:bg-neutral-900 rounded-xl shadow-xl transform transition-all',
+            sizes[size]
+          )}
+        >
+          {(title || showCloseButton) && (
+            <div className="flex items-start justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
+              <div>
+                {title && (
+                  <h2 id="modal-title" className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    {title}
+                  </h2>
+                )}
+                {description && (
+                  <p id="modal-description" className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                    {description}
+                  </p>
+                )}
+              </div>
+              {showCloseButton && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<X className="h-4 w-4" />}
+                  onClick={onClose}
+                  aria-label="Close modal"
+                />
+              )}
+            </div>
+          )}
+          <div className="p-6">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!isWeb) return null;
+  return createPortal(modalContent, getDocument()!.body);
+}
+
+export interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'primary';
+  loading?: boolean;
+}
+
+export function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'danger',
+  loading = false,
+}: ConfirmModalProps) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+      <p className="text-neutral-600 dark:text-neutral-400 mb-6">{message}</p>
+      <div className="flex justify-end gap-3">
+        <Button variant="ghost" onClick={onClose} disabled={loading}>
+          {cancelText}
+        </Button>
+        <Button variant={variant} onClick={onConfirm} loading={loading}>
+          {confirmText}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+export interface AlertModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  type?: 'success' | 'error' | 'warning' | 'info';
+}
+
+export function AlertModal({ isOpen, onClose, title, message, type = 'info' }: AlertModalProps) {
+  const icons = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'ℹ',
+  };
+
+  const colors = {
+    success: 'text-success-600 dark:text-success-400',
+    error: 'text-danger-600 dark:text-danger-400',
+    warning: 'text-warning-600 dark:text-warning-400',
+    info: 'text-primary-600 dark:text-primary-400',
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+      <div className="flex items-start gap-3">
+        <span className={cn('text-2xl mt-0.5', colors[type])}>{icons[type]}</span>
+        <p className="text-neutral-600 dark:text-neutral-400">{message}</p>
+      </div>
+      <div className="mt-6 flex justify-end">
+        <Button onClick={onClose}>OK</Button>
+      </div>
+    </Modal>
+  );
+}

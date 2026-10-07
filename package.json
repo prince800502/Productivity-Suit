@@ -1,0 +1,39 @@
+{
+  "name": "productivity-suite",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter @productivity-suite/web dev",
+    "dev:mobile": "pnpm --filter @productivity-suite/mobile dev",
+    "build:web": "pnpm --filter @productivity-suite/web build",
+    "build:mobile": "pnpm --filter @productivity-suite/mobile build",
+    "lint": "pnpm --filter @productivity-suite/web lint && pnpm --filter @productivity-suite/mobile lint && pnpm --filter @productivity-suite/core lint && pnpm --filter @productivity-suite/ui lint",
+    "typecheck": "pnpm --filter @productivity-suite/web typecheck && pnpm --filter @productivity-suite/mobile typecheck && pnpm --filter @productivity-suite/core typecheck && pnpm --filter @productivity-suite/ui typecheck",
+    "db:push": "pnpm --filter @productivity-suite/core db:push",
+    "db:studio": "pnpm --filter @productivity-suite/core db:studio"
+  },
+  "devDependencies": {
+    "react-native-builder-bob": "^0.43.1",
+    "supabase": "^1.160.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "pnpm": {
+    "allowedBuildDependencies": [
+      "supabase",
+      "unrs-resolver"
+    ],
+    "overrides": {
+      "expo-linking": "~6.3.1",
+      "expo-constants": "~16.0.2",
+      "@expo/metro-runtime": "~3.2.3",
+      "@expo/dom-webview": "~1.2.0",
+      "@expo/log-box": "~2.2.0",
+      "expo": "^51.0.0",
+      "expo-router": "~3.5.24"
+    }
+  }
+}

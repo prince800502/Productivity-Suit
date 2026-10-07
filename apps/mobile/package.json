@@ -1,0 +1,103 @@
+{
+  "name": "@productivity-suite/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./entry.js",
+  "scripts": {
+    "dev": "expo start",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios",
+    "build:web": "expo export --platform web",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@babel/runtime": "^8.0.5",
+    "@expo/metro-runtime": "~3.2.3",
+    "@expo/vector-icons": "^14.1.0",
+    "@hookform/resolvers": "^3.3.0",
+    "@productivity-suite/core": "workspace:*",
+    "@productivity-suite/ui": "workspace:*",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native/debugger-frontend": "^0.87.1",
+    "@react-navigation/bottom-tabs": "^6.5.20",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/native-stack": "^6.9.26",
+    "@supabase/supabase-js": "^2.43.0",
+    "@tanstack/react-query": "^5.28.0",
+    "date-fns": "^3.6.0",
+    "expo": "^51.0.0",
+    "expo-constants": "~16.0.2",
+    "expo-device": "~6.0.2",
+    "expo-linking": "~6.3.1",
+    "expo-local-authentication": "~14.0.1",
+    "expo-notifications": "~0.28.19",
+    "expo-router": "~3.5.24",
+    "expo-secure-store": "~13.0.2",
+    "expo-status-bar": "~1.12.0",
+    "expo-task-manager": "~11.8.2",
+    "lucide-react-native": "^1.51.0",
+    "react": "18.2.0",
+    "react-hook-form": "^7.51.0",
+    "react-native": "0.74.5",
+    "react-native-gesture-handler": "~2.16.2",
+    "react-native-reanimated": "~3.10.1",
+    "react-native-safe-area-context": "4.10.5",
+    "react-native-screens": "3.31.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~18.2.0",
+    "@types/react-native": "^0.73.0",
+    "eslint-config-expo": "~7.1.2",
+    "typescript": "~5.3.3"
+  },
+  "expo": {
+    "name": "Productivity Suite",
+    "slug": "productivity-suite",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0ea5e9"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.productivitysuite.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0ea5e9"
+      },
+      "package": "com.productivitysuite.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0ea5e9",
+          "sounds": [
+            "./assets/notification-sound.wav"
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

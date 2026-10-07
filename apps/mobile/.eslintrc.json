@@ -1,0 +1,22 @@
+{
+  "extends": ["expo"],
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "commonjs"
+  },
+  "globals": {
+    "__dirname": "readonly",
+    "__filename": "readonly",
+    "require": "readonly",
+    "module": "readonly",
+    "process": "readonly"
+  },
+  "rules": {
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-undef": "off"
+  }
+}

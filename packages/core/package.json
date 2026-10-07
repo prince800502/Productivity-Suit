@@ -1,0 +1,26 @@
+{
+  "name": "@productivity-suite/core",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "react-native": "index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:push": "supabase db push",
+    "db:studio": "supabase studio",
+    "gen:types": "supabase gen types typescript --local > src/types/database.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.0",
+    "@tanstack/react-query": "^5.28.0",
+    "date-fns": "^3.6.0",
+    "zod": "^3.23.0",
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@types/react": "^18.3.0",
+    "supabase": "^1.160.0",
+    "typescript": "^5.4.0"
+  }
+}

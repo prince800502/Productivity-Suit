@@ -10,7 +10,8 @@
     "lint": "pnpm --filter @productivity-suite/web lint && pnpm --filter @productivity-suite/mobile lint && pnpm --filter @productivity-suite/core lint && pnpm --filter @productivity-suite/ui lint",
     "typecheck": "pnpm --filter @productivity-suite/web typecheck && pnpm --filter @productivity-suite/mobile typecheck && pnpm --filter @productivity-suite/core typecheck && pnpm --filter @productivity-suite/ui typecheck",
     "db:push": "pnpm --filter @productivity-suite/core db:push",
-    "db:studio": "pnpm --filter @productivity-suite/core db:studio"
+    "db:studio": "pnpm --filter @productivity-suite/core db:studio",
+    "preinstall": "pnpm approve-builds supabase unrs-resolver"
   },
   "devDependencies": {
     "react-native-builder-bob": "^0.43.1",

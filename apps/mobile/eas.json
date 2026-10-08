@@ -20,9 +20,6 @@
       }
     }
   },
-  "hooks": {
-    "pre-install": "pnpm approve-builds supabase unrs-resolver"
-  },
   "submit": {
     "production": {}
   }

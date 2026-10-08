@@ -6,7 +6,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, subDays
 import { Plus, Target, CheckCircle, RotateCcw, Trash2, Edit, Calendar, ChevronLeft, ChevronRight, X, Flame, Undo2 } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Badge, Input, Select, Modal, Textarea, Switch
+  Button, Badge, Input, Select, Modal, Textarea, Switch, Tabs
 } from '@productivity-suite/ui';
 import { useHabits, useCreateHabit, useUpdateHabit, useDeleteHabit, useCompleteHabit, useUndoHabitCompletion, useHabitStreak, useHabitSkips, useSkipHabit, useUndoHabitSkip, useArchiveHabit, useRestoreHabit, useHabitStats, useTodayHabits, HabitForm, HabitCompletionForm, HabitSkipForm } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';

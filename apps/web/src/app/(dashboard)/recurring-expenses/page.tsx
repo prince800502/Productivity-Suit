@@ -6,9 +6,9 @@ import { format } from 'date-fns';
 import { Plus, Edit, Trash2, CreditCard, RotateCcw, AlertTriangle, Calendar, DollarSign } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Input, Select, Badge, Progress, Modal, Switch
+  Button, Input, Select, Badge, Progress, Modal, Switch, Tabs
 } from '@productivity-suite/ui';
-import { useRecurringExpenses, useCreateRecurringExpense, useUpdateRecurringExpense, useDeleteRecurringExpense, useToggleRecurringExpenseActive, useUpcomingPayments, useMonthlySubscriptionTotal, RecurringExpenseForm, RecurringFrequency, UpcomingPayment } from '@productivity-suite/core';
+import { useRecurringExpenses, useCreateRecurringExpense, useUpdateRecurringExpense, useDeleteRecurringExpense, useToggleRecurringExpenseActive, useUpcomingPayments, useMonthlySubscriptionTotal, RecurringExpenseForm, RecurringExpense, RecurringFrequency, UpcomingPayment } from '@productivity-suite/core';
 import { categoryColors, categoryIcons, formatCurrency } from '@productivity-suite/ui';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,14 +30,28 @@ const recurringExpenseSchema = z.object({
   description: z.string().max(500).optional(),
   amount: z.number().positive(),
   currency: z.string().default('USD'),
-  category: z.enum(['food', 'transport', 'shopping', 'entertainment', 'health', 'education', 'utilities', 'other']),
-  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
+  category: z.union([
+    z.literal('food'),
+    z.literal('transport'),
+    z.literal('shopping'),
+    z.literal('entertainment'),
+    z.literal('health'),
+    z.literal('education'),
+    z.literal('utilities'),
+    z.literal('other'),
+  ]),
+  frequency: z.union([
+    z.literal('daily'),
+    z.literal('weekly'),
+    z.literal('monthly'),
+    z.literal('yearly'),
+  ]),
   start_date: z.string().date(),
   end_date: z.string().date().optional().nullable(),
   reminder_days_before: z.number().int().min(0).max(30).default(3),
   payment_method: z.string().max(50).optional(),
   auto_create_expense: z.boolean().default(true),
-);
+});
 
 function getFrequencyLabel(freq: RecurringFrequency) {
   switch (freq) {
@@ -113,7 +127,7 @@ function RecurringExpensesContent({
             </div>
           ) : expenses && expenses.length > 0 ? (
             <div className="space-y-3">
-              {expenses.map(expense => (
+              {expenses.map((expense: RecurringExpense) => (
                 <div key={expense.id} className="flex items-center justify-between p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${categoryColors[expense.category]}20` }}>
@@ -143,6 +157,8 @@ function RecurringExpensesContent({
                     <Switch
                       checked={expense.is_active}
                       onChange={(e) => toggleActive.mutate({ id: expense.id, is_active: e.target.checked })}
+                      label=""
+                      description=""
                     />
                     <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={() => handleEdit(expense)} />
                     <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => { if (confirm('Delete this recurring expense?')) deleteRecurringExpense.mutate(expense.id); }} />
@@ -396,38 +412,3 @@ export default function RecurringExpensesPage() {
   );
 }
 
-const categories = [
-  { value: 'food', label: 'Food & Dining' },
-  { value: 'transport', label: 'Transport' },
-  { value: 'shopping', label: 'Shopping' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'health', label: 'Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'utilities', label: 'Utilities' },
-  { value: 'other', label: 'Other' },
-];
-
-const recurringExpenseSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  amount: z.number().positive(),
-  currency: z.string().default('USD'),
-  category: z.enum(['food', 'transport', 'shopping', 'entertainment', 'health', 'education', 'utilities', 'other']),
-  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
-  start_date: z.string().date(),
-  end_date: z.string().date().optional().nullable(),
-  reminder_days_before: z.number().int().min(0).max(30).default(3),
-  payment_method: z.string().max(50).optional(),
-  auto_create_expense: z.boolean().default(true),
-);
-
-const { useState } = React;
-const { useRecurringExpenses, useCreateRecurringExpense, useUpdateRecurringExpense, useDeleteRecurringExpense, useToggleRecurringExpenseActive, useUpcomingPayments, useMonthlySubscriptionTotal, RecurringExpenseForm, RecurringFrequency, UpcomingPayment } = require('@productivity-suite/core');
-const { categoryColors, categoryIcons, formatCurrency } = require('@productivity-suite/ui');
-const { useForm } = require('react-hook-form');
-const { zodResolver } = require('@hookform/resolvers/zod');
-const { z } = require('zod');
-const { format } = require('date-fns');
-const { Plus, Edit, Trash2, CreditCard, RotateCcw, AlertTriangle, Calendar, DollarSign } = require('lucide-react');
-const { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button, Input, Select, Badge, Progress, Modal, Switch } = require('@productivity-suite/ui');
-const { categoryColors, categoryIcons, formatCurrency } = require('@productivity-suite/ui');

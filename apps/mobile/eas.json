@@ -11,7 +11,8 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://ussttiqknnckzmwhfubb.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_hRkJ2VCxlT_29rSPZdqSvQ_w2huueJ6"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_hRkJ2VCxlT_29rSPZdqSvQ_w2huueJ6",
+        "PNPM_ALLOWED_BUILD_DEPENDENCIES": "supabase,unrs-resolver"
       }
     },
     "production": {

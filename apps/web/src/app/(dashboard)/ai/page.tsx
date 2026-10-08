@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { Send, Bot, Sparkles, Copy, Check, AlertCircle, Settings, X, ChevronLeft, ChevronRight, MessageSquare, Zap, Brain, Download, Upload, Plus, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
@@ -24,6 +24,8 @@ const aiProviderSchema = z.object({
   max_tokens: z.number().int().positive().default(4000),
   capabilities: z.array(z.enum(['chat', 'completion', 'embedding', 'function_calling'])).default(['chat']),
   rate_limit_rpm: z.number().int().positive().default(60),
+  is_active: z.boolean().default(true),
+  is_default: z.boolean().default(false),
 });
 
 const aiConversationSchema = z.object({
@@ -52,7 +54,7 @@ export default function AIPage() {
   const [editingProvider, setEditingProvider] = useState<any>(null);
   const [isConversationModalOpen, setIsConversationModalOpen] = useState(false);
   const [editingConversation, setEditingConversation] = useState<any>(null);
-  const [messagesEndRef, setMessagesEndRef] = useRef<HTMLDivElement>(null);
+  const [messagesEndRef, setMessagesEndRef] = useState<HTMLDivElement | null>(null);
   const [showConfigBanner, setShowConfigBanner] = useState(false);
 
   const { data: context } = useAIContext();
@@ -79,6 +81,8 @@ export default function AIPage() {
       max_tokens: 4000,
       capabilities: ['chat'],
       rate_limit_rpm: 60,
+      is_active: true,
+      is_default: false,
     },
   });
 
@@ -88,7 +92,9 @@ export default function AIPage() {
   });
 
   useEffect(() => {
-    setMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef) {
+      messagesEndRef.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -110,6 +116,7 @@ export default function AIPage() {
         conversation_id: selectedConversationId,
         role: 'user',
         content: newMessage,
+        metadata: {},
       });
 
       // Here you would call the AI provider API
@@ -197,7 +204,7 @@ export default function AIPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onChange={setActiveTab} tabs={[
+      <Tabs value={activeTab} onChange={(value: string) => setActiveTab(value as 'chat' | 'conversations' | 'providers' | 'reports')} tabs={[
         { value: 'chat', label: 'Chat', icon: <MessageSquare className="w-4 h-4" /> },
         { value: 'conversations', label: 'History', icon: <MessageSquare className="w-4 h-4" /> },
         { value: 'providers', label: 'Providers', icon: <Zap className="w-4 h-4" /> },
@@ -239,28 +246,28 @@ export default function AIPage() {
             <div className="flex-1 flex flex-col min-w-0">
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {selectedConversationId && messages ? (
-                  <>
-                    {messages.map((message, index) => (
+                  messages.map((message, index) => {
+                    return (
                       <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.role === 'user' ? 'bg-primary-500' : message.role === 'assistant' ? 'bg-primary-100 dark:bg-primary-900/30' : 'bg-neutral-100 dark:bg-neutral-800'}`}>
-                          {message.role === 'user' ? (
-                            <span className="text-sm font-medium text-white">You</span>
-                          ) : message.role === 'assistant' ? (
-                            <Bot className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                          ) : (
-                            <Settings className="w-4 h-4 text-neutral-500" />
-                          )}
-                        </div>
-                        <div className={`max-w-[70%] ${message.role === 'user' ? 'text-right' : ''}`}>
-                          <div className={`px-4 py-2 rounded-2xl ${message.role === 'user' ? 'bg-primary-500 text-white' : message.role === 'assistant' ? 'bg-primary-100 dark:bg-primary-900/30 text-neutral-900 dark:text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'}`}>
-                            <p className="whitespace-pre-wrap">{message.content}</p>
-                          </div>
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{format(new Date(message.created_at), 'HH:mm')}</p>
-                        </div>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.role === 'user' ? 'bg-primary-500' : message.role === 'assistant' ? 'bg-primary-100 dark:bg-primary-900/30' : 'bg-neutral-100 dark:bg-neutral-800'}`}>
+                        {message.role === 'user' ? (
+                          <span className="text-sm font-medium text-white">You</span>
+                        ) : message.role === 'assistant' ? (
+                          <Bot className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                        ) : (
+                          <Settings className="w-4 h-4 text-neutral-500" />
+                        )}
                       </div>
-                    ))}
-                    <div ref={setMessagesEndRef} />
-                  </>
+                      <div className={`max-w-[70%] ${message.role === 'user' ? 'text-right' : ''}`}>
+                        <div className={`px-4 py-2 rounded-2xl ${message.role === 'user' ? 'bg-primary-500 text-white' : message.role === 'assistant' ? 'bg-primary-100 dark:bg-primary-900/30 text-neutral-900 dark:text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'}`}>
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{format(new Date(message.created_at), 'HH:mm')}</p>
+                      </div>
+                    </div>
+                    );
+                  })}
+                  <div ref={setMessagesEndRef} />
                 ) : (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
@@ -296,7 +303,6 @@ export default function AIPage() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder={!defaultProvider ? 'Configure an AI provider first' : 'Type your message...'}
-                    placeholderText={!defaultProvider ? 'Configure an AI provider first' : 'Type your message...'}
                     rows={1}
                     className="flex-1"
                     disabled={!defaultProvider || !selectedConversationId || isLoading}
@@ -367,7 +373,7 @@ export default function AIPage() {
                     </div>
                   </div>
                 ))}
-            </div>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
@@ -585,31 +591,4 @@ export default function AIPage() {
   );
 }
 
-const aiProviderSchema = z.object({
-  provider: z.enum(['openai', 'anthropic', 'google', 'ollama', 'custom']),
-  name: z.string().min(1).max(50),
-  api_key: z.string().optional(),
-  base_url: z.string().url().optional().or(z.literal('')),
-  model: z.string().min(1),
-  temperature: z.number().min(0).max(2).default(0.7),
-  max_tokens: z.number().int().positive().default(4000),
-  capabilities: z.array(z.enum(['chat', 'completion', 'embedding', 'function_calling'])).default(['chat']),
-  rate_limit_rpm: z.number().int().positive().default(60),
-});
-
-const aiConversationSchema = z.object({
-  ai_provider_id: z.string().uuid().optional(),
-  title: z.string().max(100).optional(),
-  system_prompt: z.string().max(2000).optional(),
-  model: z.string().optional(),
-  temperature: z.number().min(0).max(2).optional(),
-});
-
-const aiMessageSchema = z.object({
-  conversation_id: z.string().uuid(),
-  role: z.enum(['system', 'user', 'assistant', 'tool']),
-  content: z.string(),
-  tool_calls: z.unknown().optional(),
-  tool_call_id: z.string().optional(),
-  metadata: z.record(z.unknown()).default({}),
-});
+export default AIPage;

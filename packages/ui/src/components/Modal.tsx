@@ -137,7 +137,14 @@ export function Modal({
     </div>
   );
 
-  if (!isWeb) return null;
+  // During SSR/type checking, render a placeholder instead of null to avoid JSX parsing issues
+  if (!isWeb) {
+    return (
+      <div data-modal-placeholder="true" style={{ display: 'none' }}>
+        {children}
+      </div>
+    );
+  }
   return createPortal(modalContent, getDocument()!.body);
 }
 

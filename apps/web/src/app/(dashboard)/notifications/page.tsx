@@ -41,6 +41,216 @@ const notificationPreferencesSchema = z.object({
   batch_similar: z.boolean().default(true),
 });
 
+function getNotificationIcon(type: NotificationType) {
+  switch (type) {
+    case 'task_reminder': return <Clock className="w-4 h-4" />;
+    case 'habit_reminder': return <Target className="w-4 h-4" />;
+    case 'budget_warning': return <AlertTriangle className="w-4 h-4" />;
+    case 'budget_exceeded': return <AlertTriangle className="w-4 h-4" />;
+    case 'subscription_renewal': return <CreditCard className="w-4 h-4" />;
+    case 'goal_deadline': return <Flag className="w-4 h-4" />;
+    case 'pomodoro_reminder': return <Timer className="w-4 h-4" />;
+    case 'schedule_reminder': return <Calendar className="w-4 h-4" />;
+    case 'routine_reminder': return <Repeat className="w-4 h-4" />;
+    case 'milestone_due': return <Flag className="w-4 h-4" />;
+    case 'weekly_report': return <Trophy className="w-4 h-4" />;
+    case 'achievement': return <Trophy className="w-4 h-4" />;
+    case 'streak_milestone': return <Flame className="w-4 h-4" />;
+    case 'custom': return <Bell className="w-4 h-4" />;
+    default: return <Bell className="w-4 h-4" />;
+  }
+}
+
+function getNotificationColor(priority: NotificationPriority) {
+  switch (priority) {
+    case 'urgent': return 'text-danger-600 bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800';
+    case 'high': return 'text-warning-600 bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
+    case 'normal': return 'text-primary-600 bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800';
+    case 'low': return 'text-neutral-600 bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700';
+    default: return 'text-primary-600 bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800';
+  }
+}
+
+function formatNotificationTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return diffMins + 'm ago';
+  if (diffHours < 24) return diffHours + 'h ago';
+  if (diffDays < 7) return diffDays + 'd ago';
+  return format(date, 'MMM d, yyyy');
+}
+
+function renderNotificationItem(
+  notification: any,
+  getNotificationColor: (priority: any) => string,
+  getNotificationIcon: (type: any) => React.ReactNode,
+  formatNotificationTime: (dateString: string) => string,
+  handleMarkAsRead: (id: string) => void,
+  handleArchive: (id: string) => void,
+  handleDelete: (id: string) => void
+) {
+  return (
+    <div 
+      key={notification.id} 
+      className={notification.is_read ? 'bg-white dark:bg-neutral-900 p-4 flex items-start gap-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800' : 'bg-primary-50 dark:bg-primary-900/20 p-4 flex items-start gap-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800'}
+    >
+      <div className={'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ' + getNotificationColor(notification.priority)}>
+        {getNotificationIcon(notification.type)}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h4 className={notification.is_read ? 'font-medium text-neutral-900 dark:text-white' : 'font-semibold text-neutral-900 dark:text-white'}>
+              {notification.title}
+            </h4>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{notification.message}</p>
+          </div>
+          <span className="text-xs text-neutral-400 dark:text-neutral-500 whitespace-nowrap">
+            {formatNotificationTime(notification.created_at)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {notification.action_url && notification.action_label && (
+            <Button variant="ghost" size="sm" className="text-xs" onClick={() => window.location.href = notification.action_url}>
+              {notification.action_label}
+            </Button>
+          )}
+          {!notification.is_read && (
+            <Button variant="ghost" size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={() => handleMarkAsRead(notification.id)} />
+          )}
+          <Button variant="ghost" size="sm" icon={<X className="w-3.5 h-3.5" />} onClick={() => handleArchive(notification.id)} />
+          <Dropdown
+            trigger={
+              <Button variant="ghost" size="sm" icon={<X className="w-3.5 h-3.5" />} />
+            }
+            items={[
+              { label: 'Delete', value: 'delete', icon: Trash2 as any, danger: true },
+            ]}
+            onSelect={(value) => value === 'delete' && handleDelete(notification.id)}
+            align="right"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotificationList({
+  isLoading,
+  notifications,
+  getNotificationColor,
+  getNotificationIcon,
+  formatNotificationTime,
+  handleMarkAsRead,
+  handleArchive,
+  handleDelete,
+}: {
+  isLoading: boolean;
+  notifications: any[];
+  getNotificationColor: (priority: any) => string;
+  getNotificationIcon: (type: any) => React.ReactNode;
+  formatNotificationTime: (dateString: string) => string;
+  handleMarkAsRead: (id: string) => void;
+  handleArchive: (id: string) => void;
+  handleDelete: (id: string) => void;
+}) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          {[1,2,3,4,5].map(i => <div key={i} className="h-16 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />)}
+        </CardContent>
+      </Card>
+    );
+  }
+  if (notifications && notifications.length > 0) {
+    return (
+      <Card>
+        <CardContent className="p-0">
+          <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+            {notifications.map(notification => renderNotificationItem(
+              notification,
+              getNotificationColor,
+              getNotificationIcon,
+              formatNotificationTime,
+              handleMarkAsRead,
+              handleArchive,
+              handleDelete
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <Card>
+      <CardContent className="text-center py-12">
+        <Bell className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+        <p className="text-neutral-500 dark:text-neutral-400 mb-4">No notifications found</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmailNotificationsList({ watch, register }: { watch: any; register: any }) {
+  const items = [
+    { key: 'email_enabled', label: 'Email Notifications', desc: 'Receive notifications via email' },
+    { key: 'email_daily_summary', label: 'Daily Summary', desc: 'Get a daily summary of your activity' },
+    { key: 'email_weekly_report', label: 'Weekly Report', desc: 'Receive a weekly productivity report' },
+    { key: 'email_budget_alerts', label: 'Budget Alerts', desc: 'Get notified when approaching budget limits' },
+    { key: 'email_task_reminders', label: 'Task Reminders', desc: 'Reminders for upcoming and overdue tasks' },
+    { key: 'email_routine_reminders', label: 'Routine Reminders', desc: 'Reminders for your daily routines' },
+    { key: 'email_habit_reminders', label: 'Habit Reminders', desc: 'Reminders for your daily habits' },
+    { key: 'email_goal_deadlines', label: 'Goal Deadlines', desc: 'Get notified about approaching goal deadlines' },
+    { key: 'email_subscription_renewals', label: 'Subscription Renewals', desc: 'Get notified about upcoming subscription renewals' },
+  ];
+  return (
+    <div className="space-y-3">
+      {items.map(item => (
+        <div key={item.key} className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-neutral-900 dark:text-white">{item.label}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">{item.desc}</p>
+          </div>
+          <Switch checked={watch(item.key)} onChange={(e) => register(item.key).onChange(e)} label={item.label} description={item.desc} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PushNotificationsList({ watch, register }: { watch: any; register: any }) {
+  const items = [
+    { key: 'push_enabled', label: 'Push Notifications', desc: 'Receive push notifications on your devices' },
+    { key: 'push_task_reminders', label: 'Task Reminders', desc: 'Push reminders for upcoming and overdue tasks' },
+    { key: 'push_routine_reminders', label: 'Routine Reminders', desc: 'Push reminders for your daily routines' },
+    { key: 'push_habit_reminders', label: 'Habit Reminders', desc: 'Push reminders for your daily habits' },
+    { key: 'push_budget_warnings', label: 'Budget Warnings', desc: 'Push warnings when approaching budget limits' },
+    { key: 'push_subscription_renewals', label: 'Subscription Renewals', desc: 'Push notifications for subscription renewals' },
+    { key: 'push_goal_deadlines', label: 'Goal Deadlines', desc: 'Push notifications for goal deadlines' },
+    { key: 'push_pomodoro_reminders', label: 'Pomodoro Reminders', desc: 'Push reminders for Pomodoro sessions' },
+    { key: 'push_schedule_reminders', label: 'Schedule Reminders', desc: 'Push reminders for scheduled events' },
+  ];
+  return (
+    <div className="space-y-3">
+      {items.map(item => (
+        <div key={item.key} className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-neutral-900 dark:text-white">{item.label}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">{item.desc}</p>
+          </div>
+          <Switch checked={watch(item.key)} onChange={(e) => register(item.key).onChange(e)} label={item.label} description={item.desc} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
@@ -62,7 +272,7 @@ function NotificationsPage() {
   const deleteNotification = useDeleteNotification();
   const updatePreferences = useUpdateNotificationPreferences();
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<z.infer<typeof notificationPreferencesSchema>>({
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<z.infer<typeof notificationPreferencesSchema>>({
     resolver: zodResolver(notificationPreferencesSchema),
     defaultValues: {
       in_app_enabled: true,
@@ -147,9 +357,9 @@ function NotificationsPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onChange={setActiveTab} tabs={[
+      <Tabs value={activeTab} onChange={(value: string) => setActiveTab(value as 'all' | 'unread')} tabs={[
         { value: 'all', label: 'All' },
-        { value: 'unread', label: `Unread ${unreadCount && unreadCount > 0 ? `(${unreadCount})` : ''}` },
+        { value: 'unread', label: 'Unread ' + (unreadCount && unreadCount > 0 ? '(' + unreadCount + ')' : '') },
       ]} fullWidth />
 
       <div className="flex items-center justify-between mb-4">
@@ -177,31 +387,15 @@ function NotificationsPage() {
         />
       </div>
 
-      <NotificationsContent
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        filterType={filterType}
-        setFilterType={setFilterType}
-        isPreferencesOpen={isPreferencesOpen}
-        setIsPreferencesOpen={setIsPreferencesOpen}
-        deleteConfirm={deleteConfirm}
-        setDeleteConfirm={setDeleteConfirm}
-        notifications={notifications}
+      <NotificationList
         isLoading={isLoading}
-        refetch={refetch}
-        unreadCount={unreadCount}
-        preferences={preferences}
-        markAsRead={markAsRead}
-        markAllAsRead={markAllAsRead}
-        archiveNotification={archiveNotification}
-        deleteNotification={deleteNotification}
-        updatePreferences={updatePreferences}
-        register={register}
-        handleSubmit={handleSubmit}
-        reset={reset}
-        formState={formState}
-        watch={watch}
-        onSubmitPreferences={onSubmitPreferences}
+        notifications={notifications || []}
+        getNotificationColor={getNotificationColor}
+        getNotificationIcon={getNotificationIcon}
+        formatNotificationTime={formatNotificationTime}
+        handleMarkAsRead={handleMarkAsRead}
+        handleArchive={handleArchive}
+        handleDelete={handleDelete}
       />
 
       {/* Preferences Modal */}
@@ -220,52 +414,12 @@ function NotificationsPage() {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-2">Email Notifications</h3>
-            <div className="space-y-3">
-              {[
-                { key: 'email_enabled', label: 'Email Notifications', desc: 'Receive notifications via email' },
-                { key: 'email_daily_summary', label: 'Daily Summary', desc: 'Get a daily summary of your activity' },
-                { key: 'email_weekly_report', label: 'Weekly Report', desc: 'Receive a weekly productivity report' },
-                { key: 'email_budget_alerts', label: 'Budget Alerts', desc: 'Get notified when approaching budget limits' },
-                { key: 'email_task_reminders', label: 'Task Reminders', desc: 'Reminders for upcoming and overdue tasks' },
-                { key: 'email_routine_reminders', label: 'Routine Reminders', desc: 'Reminders for your daily routines' },
-                { key: 'email_habit_reminders', label: 'Habit Reminders', desc: 'Reminders for your daily habits' },
-                { key: 'email_goal_deadlines', label: 'Goal Deadlines', desc: 'Get notified about approaching goal deadlines' },
-                { key: 'email_subscription_renewals', label: 'Subscription Renewals', desc: 'Get notified about upcoming subscription renewals' },
-              ].map(item => (
-                <div key={item.key} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-neutral-900 dark:text-white">{item.label}</p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{item.desc}</p>
-                  </div>
-                  <Switch checked={watch(item.key)} onChange={(e) => register(item.key).onChange(e)} label={item.label} description={item.desc} />
-                </div>
-              ))}
-            </div>
+            <EmailNotificationsList watch={watch} register={register} />
           </div>
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white border-b border-neutral-200 dark:border-neutral-800 pb-2">Push Notifications</h3>
-            <div className="space-y-3">
-              {[
-                { key: 'push_enabled', label: 'Push Notifications', desc: 'Receive push notifications on your devices' },
-                { key: 'push_task_reminders', label: 'Task Reminders', desc: 'Push reminders for upcoming and overdue tasks' },
-                { key: 'push_routine_reminders', label: 'Routine Reminders', desc: 'Push reminders for your daily routines' },
-                { key: 'push_habit_reminders', label: 'Habit Reminders', desc: 'Push reminders for your daily habits' },
-                { key: 'push_budget_warnings', label: 'Budget Warnings', desc: 'Push warnings when approaching budget limits' },
-                { key: 'push_subscription_renewals', label: 'Subscription Renewals', desc: 'Push notifications for subscription renewals' },
-                { key: 'push_goal_deadlines', label: 'Goal Deadlines', desc: 'Push notifications for goal deadlines' },
-                { key: 'push_pomodoro_reminders', label: 'Pomodoro Reminders', desc: 'Push reminders for Pomodoro sessions' },
-                { key: 'push_schedule_reminders', label: 'Schedule Reminders', desc: 'Push reminders for scheduled events' },
-              ].map(item => (
-                <div key={item.key} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-neutral-900 dark:text-white">{item.label}</p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{item.desc}</p>
-                  </div>
-                  <Switch checked={watch(item.key)} onChange={(e) => register(item.key).onChange(e)} label={item.label} description={item.desc} />
-                </div>
-              ))}
-            </div>
+            <PushNotificationsList watch={watch} register={register} />
           </div>
 
           <div className="space-y-4">
@@ -283,7 +437,7 @@ function NotificationsPage() {
                 <p className="font-medium text-neutral-900 dark:text-white">Batch Similar Notifications</p>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">Group similar notifications together</p>
               </div>
-              <Switch checked={watch('batch_similar')} onChange={(e) => register('batch_similar').onChange(e)} />
+              <Switch checked={watch('batch_similar')} onChange={(e) => register('batch_similar').onChange(e)} label="" description="" />
             </div>
           </div>
 
@@ -306,3 +460,4 @@ function NotificationsPage() {
   );
 }
 
+export default NotificationsPage;

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Button from '@/components/Button';
 
 const moreItems = [
+  { name: 'College', icon: 'school', route: '/college', color: '#0ea5e9' },
   { name: 'Routines', icon: 'flag', route: '/routines', color: '#8b5cf6' },
   { name: 'Schedule', icon: 'calendar', route: '/schedule', color: '#0ea5e9' },
   { name: 'Analytics', icon: 'analytics', route: '/analytics', color: '#22c55e' },
@@ -25,7 +26,7 @@ export default function MoreScreen() {
           <TouchableOpacity
             key={item.name}
             style={styles.listItem}
-            onPress={() => router.push(item.route)}
+            onPress={() => router.push(item.route as any)}
             activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, { backgroundColor: `${item.color}20` }]}>

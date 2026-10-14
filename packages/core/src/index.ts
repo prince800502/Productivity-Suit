@@ -1,5 +1,6 @@
 export * from './types';
 export * from './lib/supabase';
+export * from './lib/import';
 export * from './hooks/useAuth';
 export * from './hooks/useExpenses';
 export * from './hooks/useTasks';
@@ -14,3 +15,4 @@ export * from './hooks/useHabits';
 export * from './hooks/useNotifications';
 export * from './hooks/useCalendar';
 export * from './hooks/useAI';
+export * from './hooks/useCollege';

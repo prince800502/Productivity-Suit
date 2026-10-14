@@ -1,0 +1,56 @@
+# Ignore development and configuration directories
+.claude
+.agents
+.idea
+.vscode
+*.log
+*.log.*
+*.tmp
+*.temp
+dist/
+node_modules/
+.vercel
+.netlify
+*.local
+*.local.*
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Ignore brag output
+brag-output/
+
+# Ignore skills lock
+skills-lock.json
+
+# Ignore agent files
+.agents/
+
+# Ignore pnpm store
+.pnpm-store/
+
+# Ignore turbo cache
+.turbo/
+
+# Ignore build outputs
+.expo/
+dist/
+
+# Ignore IDE files
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore parent directory node_modules and other large folders
+../node_modules/
+../.pnpm-store/
+../.turbo/
+../apps/web/.next/
+../apps/web/out/
+../packages/*/dist/
+../packages/*/build/

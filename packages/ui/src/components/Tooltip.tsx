@@ -38,10 +38,10 @@ export function Tooltip({ content, children, position = 'top', delay = 200, clas
   };
 
   const arrows = {
-    top: 'top-full left-1/2 -translate-x-1/2 border-t-neutral-900 dark:border-t-neutral-800',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-neutral-900 dark:border-b-neutral-800',
-    left: 'left-full top-1/2 -translate-y-1/2 border-l-neutral-900 dark:border-l-neutral-800',
-    right: 'right-full top-1/2 -translate-y-1/2 border-r-neutral-900 dark:border-r-neutral-800',
+    top: 'top-full left-1/2 -translate-x-1/2 border-t-white/90 dark:border-t-neutral-950/90',
+    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-white/90 dark:border-b-neutral-950/90',
+    left: 'left-full top-1/2 -translate-y-1/2 border-l-white/90 dark:border-l-neutral-950/90',
+    right: 'right-full top-1/2 -translate-y-1/2 border-r-white/90 dark:border-r-neutral-950/90',
   };
 
   const tooltipContent = isVisible ? (
@@ -49,13 +49,14 @@ export function Tooltip({ content, children, position = 'top', delay = 200, clas
       ref={tooltipRef}
       role="tooltip"
       className={cn(
-        'absolute z-50 px-3 py-1.5 text-xs font-medium text-white',
-        'bg-neutral-900 dark:bg-neutral-950 rounded shadow-lg',
+        'absolute z-50 px-3 py-1.5 text-xs font-medium',
+        'glass-strong rounded shadow-glass',
         'whitespace-nowrap pointer-events-none',
         'animate-fade-in scale-95',
         positions[position],
         className
       )}
+      style={{ borderColor: 'rgba(148, 163, 184, 0.2)' }}
     >
       {content}
       <div
@@ -106,10 +107,10 @@ export function SimpleTooltip({ content, children, position = 'top', className }
   };
 
   const arrows = {
-    top: 'top-full left-1/2 -translate-x-1/2 border-t-neutral-900 dark:border-t-neutral-800',
-    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-neutral-900 dark:border-b-neutral-800',
-    left: 'left-full top-1/2 -translate-y-1/2 border-l-neutral-900 dark:border-l-neutral-800',
-    right: 'right-full top-1/2 -translate-y-1/2 border-r-neutral-900 dark:border-r-neutral-800',
+    top: 'top-full left-1/2 -translate-x-1/2 border-t-white/90 dark:border-t-neutral-950/90',
+    bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-white/90 dark:border-b-neutral-950/90',
+    left: 'left-full top-1/2 -translate-y-1/2 border-l-white/90 dark:border-l-neutral-950/90',
+    right: 'right-full top-1/2 -translate-y-1/2 border-r-white/90 dark:border-r-neutral-950/90',
   };
 
   return (
@@ -123,13 +124,14 @@ export function SimpleTooltip({ content, children, position = 'top', className }
         <div
           role="tooltip"
           className={cn(
-            'absolute z-50 px-3 py-1.5 text-xs font-medium text-white',
-            'bg-neutral-900 dark:bg-neutral-950 rounded shadow-lg',
+            'absolute z-50 px-3 py-1.5 text-xs font-medium',
+            'glass-strong rounded shadow-glass',
             'whitespace-nowrap pointer-events-none',
             'animate-fade-in',
             positions[position],
             className
           )}
+          style={{ borderColor: 'rgba(148, 163, 184, 0.2)' }}
         >
           {content}
           <div

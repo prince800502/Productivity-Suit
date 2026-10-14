@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "std/": "https://deno.land/std@0.224.0/",
+    "supabase": "https://esm.sh/@supabase/supabase-js@2",
+    "openai": "https://esm.sh/openai@4",
+    "anthropic": "https://esm.sh/@anthropic-ai/sdk@0.20",
+    "google-auth-library": "https://esm.sh/google-auth-library@9"
+  }
+}

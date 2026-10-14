@@ -11,6 +11,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",
     "@productivity-suite/core": "workspace:*",
+    "@radix-ui/react-scroll-area": "^1.3.0",
     "@radix-ui/react-slot": "^1.3.3",
     "clsx": "^2.1.0",
     "lucide-react": "^0.370.0",

@@ -1,4 +1,7 @@
+'use client';
+
 import { useState, useRef, useEffect, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../utils';
 import { ChevronDown, Check } from 'lucide-react';
 import { Button, IconButton } from './Button';
@@ -22,12 +25,23 @@ export interface DropdownProps {
   align?: 'left' | 'right';
   width?: number | 'trigger';
   closeOnSelect?: boolean;
+  // Optional header content (e.g., user info)
+  header?: ReactNode;
 }
 
-export function Dropdown({ trigger, items, onSelect, align = 'left', width = 'trigger', closeOnSelect = true }: DropdownProps) {
+export function Dropdown({ 
+  trigger, 
+  items, 
+  onSelect, 
+  align = 'right', 
+  width = 'trigger', 
+  closeOnSelect = true,
+  header 
+}: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     if (!isWeb) return;
@@ -57,6 +71,13 @@ export function Dropdown({ trigger, items, onSelect, align = 'left', width = 'tr
     return () => getDocument()?.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, isWeb]);
 
+  // Update trigger rect when dropdown opens
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      setTriggerRect(triggerRef.current.getBoundingClientRect());
+    }
+  }, [isOpen]);
+
   const handleItemClick = (item: DropdownItem) => {
     if (item.disabled || item.divider) return;
     if (item.value === undefined) return;
@@ -66,8 +87,7 @@ export function Dropdown({ trigger, items, onSelect, align = 'left', width = 'tr
 
   const renderItems = (items: DropdownItem[], level = 0) => (
     <ul role="menu" className={cn(
-      'py-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg',
-      'min-w-[160px] max-h-60 overflow-auto z-50',
+      'py-1 dropdown-menu min-w-[160px] max-h-60 overflow-auto',
       level > 0 && 'absolute left-full top-0 ml-1 mt-[-1px]'
     )}>
       {items.map((item, index) => {
@@ -133,20 +153,42 @@ export function Dropdown({ trigger, items, onSelect, align = 'left', width = 'tr
 
   const dropdownWidth = typeof width === 'number' ? `${width}px` : 'w-full';
 
+  const dropdownContent = isOpen && triggerRect ? (
+    <div
+      ref={dropdownRef}
+      className={cn(
+        'fixed z-[100]',
+        align === 'left' ? 'left-0' : 'right-0',
+        'top-0'
+      )}
+      style={{
+        left: align === 'left' ? triggerRect.left : undefined,
+        right: align === 'right' ? window.innerWidth - triggerRect.right : undefined,
+        top: triggerRect.bottom + 6, // 6px gap
+        minWidth: dropdownWidth === 'w-full' ? triggerRect.width : dropdownWidth,
+        maxHeight: '60vh',
+      }}
+    >
+      <div className="dropdown-menu min-w-[220px] max-w-[320px] w-full glass-strong rounded-2xl shadow-[0_24px_64px_rgb(0,0,0,0.4),inset_0_1px_0_rgba(120,113,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.15)] border-[rgba(120,113,255,0.2)] backdrop-blur-2xl overflow-hidden">
+        {/* Optional Header */}
+        {header && (
+          <div className="px-3 py-3 border-b border-neutral-200/50 dark:border-neutral-800/50">
+            {header}
+          </div>
+        )}
+        {renderItems(items)}
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div ref={dropdownRef} className="relative inline-block">
-      <div ref={triggerRef} onClick={() => setIsOpen(!isOpen)}>
+    <>
+      <div ref={triggerRef} onClick={() => setIsOpen(!isOpen)} className="inline-block">
         {trigger}
       </div>
-      {isOpen && (
-        <div
-          className={cn('absolute z-50 mt-1', align === 'left' ? 'left-0' : 'right-0')}
-          style={{ minWidth: dropdownWidth }}
-        >
-          {renderItems(items)}
-        </div>
-      )}
-    </div>
+      {/* Portal to body to avoid clipping and stacking context issues */}
+      {isWeb && dropdownContent && createPortal(dropdownContent, document.body)}
+    </>
   );
 }
 
@@ -187,12 +229,12 @@ export function SelectDropdown({ value, placeholder, options, onChange, classNam
         disabled={disabled}
         className={cn(
           'w-full flex items-center justify-between px-3 py-2',
-          'bg-white dark:bg-neutral-900',
+          'glass input-glass',
           'text-left text-neutral-900 dark:text-neutral-100',
-          'rounded-lg border transition-colors',
+          'rounded-lg transition-colors',
           error
             ? 'border-danger-500 focus:ring-2 focus:ring-danger-500'
-            : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500',
+            : 'border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
           'focus:outline-none focus:ring-2 focus:ring-primary-500',
           disabled && 'opacity-50 cursor-not-allowed',
           className
@@ -205,7 +247,7 @@ export function SelectDropdown({ value, placeholder, options, onChange, classNam
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown className={cn(
-          'h-4 w-4 flex-shrink-0 text-neutral-400 transition-transform',
+          'h-4 w-4 flex-shrink-0 text-neutral-400 transition-transform duration-200',
           isOpen && 'rotate-180'
         )} />
       </button>
@@ -213,7 +255,7 @@ export function SelectDropdown({ value, placeholder, options, onChange, classNam
       {isOpen && (
         <ul
           role="listbox"
-          className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg py-1"
+          className="absolute z-50 mt-1 w-full max-h-60 overflow-auto dropdown-menu"
         >
           {options.map(option => (
             <li key={option.value} role="option" aria-selected={value === option.value}>
@@ -227,8 +269,8 @@ export function SelectDropdown({ value, placeholder, options, onChange, classNam
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-2 text-sm text-left',
                   value === option.value
-                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
+                    ? 'bg-primary-100/50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                    : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50',
                   option.disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >

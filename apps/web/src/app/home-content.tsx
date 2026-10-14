@@ -47,7 +47,7 @@ const stats = [
 
 export default function HomePageContent() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-neutral-200 dark:border-neutral-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -88,7 +88,7 @@ export default function HomePageContent() {
       <section className="pt-32 pb-20 lg:pt-48 lg:pb-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-sm font-medium mb-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-sm font-medium mb-8 animate-fade-in">
               <Zap className="w-4 h-4" />
               <span>New: AI-powered insights & smart scheduling</span>
             </div>
@@ -135,8 +135,8 @@ export default function HomePageContent() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 via-transparent to-secondary-500/10 rounded-3xl blur-3xl" />
-            <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950">
+            <div className="relative glass-card rounded-3xl shadow-glass-elevated overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/50">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-danger-500" />
                   <div className="w-3 h-3 rounded-full bg-warning-500" />
@@ -149,10 +149,10 @@ export default function HomePageContent() {
               <div className="p-6 lg:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                   {/* Expense Card */}
-                  <div className="card p-6">
+                  <div className="glass-card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-neutral-900 dark:text-white">Monthly Budget</h3>
-                      <span className="badge badge-md badge-primary">On Track</span>
+                      <span className="badge badge-md badge-glass text-primary-600 dark:text-primary-400 border-primary-500/20 dark:border-primary-500/10">On Track</span>
                     </div>
                     <div className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">$2,340</div>
                     <div className="text-sm text-neutral-500 dark:text-neutral-400">of $3,000 budget • 78% used</div>
@@ -162,10 +162,10 @@ export default function HomePageContent() {
                   </div>
 
                   {/* Task Card */}
-                  <div className="card p-6">
+                  <div className="glass-card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-neutral-900 dark:text-white">Today's Tasks</h3>
-                      <span className="badge badge-md badge-success">3/5 Done</span>
+                      <span className="badge badge-md badge-glass text-success-600 dark:text-success-400 border-success-500/20 dark:border-success-500/10">3/5 Done</span>
                     </div>
                     <div className="space-y-3">
                       {[
@@ -188,10 +188,10 @@ export default function HomePageContent() {
                   </div>
 
                   {/* Pomodoro Card */}
-                  <div className="card p-6">
+                  <div className="glass-card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-neutral-900 dark:text-white">Focus Session</h3>
-                      <span className="badge badge-md badge-warning">Active</span>
+                      <span className="badge badge-md badge-glass text-warning-600 dark:text-warning-400 border-warning-500/20 dark:border-warning-500/10">Active</span>
                     </div>
                     <div className="relative w-32 h-32 mx-auto mb-4">
                       <svg className="w-full h-full transform -rotate-90">
@@ -227,10 +227,10 @@ export default function HomePageContent() {
                   </div>
 
                   {/* Routine Card */}
-                  <div className="card p-6">
+                  <div className="glass-card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-neutral-900 dark:text-white">Daily Routines</h3>
-                      <span className="badge badge-md badge-secondary">12 Day Streak</span>
+                      <span className="badge badge-md badge-glass text-secondary-600 dark:text-secondary-400 border-secondary-500/20 dark:border-secondary-500/10">12 Day Streak</span>
                     </div>
                     <div className="space-y-3">
                       {[
@@ -277,10 +277,10 @@ export default function HomePageContent() {
             {features.map((feature, index) => (
               <div
                 key={feature.title}
-                className="card p-6 card-hover animate-slide-up"
+                className="glass-card p-6 card-hover animate-slide-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
+                <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center mb-4">
                   <feature.icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">

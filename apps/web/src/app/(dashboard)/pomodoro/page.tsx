@@ -135,7 +135,7 @@ export default function PomodoroPage() {
       </div>
 
       {/* Main Timer */}
-      <Card className="p-8 text-center">
+      <Card variant="default" glass={true} className="p-8 text-center">
         <div className="relative w-64 h-64 mx-auto mb-8">
           <svg className="w-full h-full transform -rotate-90">
             <circle
@@ -206,100 +206,105 @@ export default function PomodoroPage() {
             </>
           )}
         </div>
-
-        {/* Session Info */}
-        {activeSession && (
-          <div className="mt-6 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Session started at {format(new Date(activeSession.started_at), 'h:mm a')}
-              {activeSession.task_id && ' • Linked to task'}
-            </p>
-          </div>
-        )}
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card padding="md" className="text-center">
-          <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats?.total_focus_minutes || 0}m</p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Focus Time</p>
-        </Card>
-        <Card padding="md" className="text-center">
-          <p className="text-2xl font-bold text-success-600 dark:text-success-400">{stats?.streak_days || 0}</p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Day Streak</p>
-        </Card>
-        <Card padding="md" className="text-center">
-          <p className="text-2xl font-bold text-warning-600 dark:text-warning-400">{stats?.total_sessions || 0}</p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Sessions Completed</p>
-        </Card>
-        <Card padding="md" className="text-center">
-          <p className="text-2xl font-bold text-secondary-600 dark:text-secondary-400">{stats?.average_session_length || 0}m</p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Avg Session</p>
-        </Card>
-      </div>
+      <Tabs value="sessions" onChange={() => {}} tabs={[
+        { value: 'sessions', label: 'Sessions', icon: <Target className="w-4 h-4" /> },
+        { value: 'stats', label: 'Statistics', icon: <BarChart3 className="w-4 h-4" /> },
+      ]} fullWidth variant="glass" className="mt-8" />
 
-      {/* Recent Sessions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+      <div className="space-y-6">
+        <Card variant="default" glass={true}>
+          <CardHeader>
             <CardTitle>Recent Sessions</CardTitle>
             <CardDescription>Your last 10 Pomodoro sessions</CardDescription>
-          </div>
-          <Tabs
-            value={activePreset}
-            onChange={(value: string) => setActivePreset(value as 'focus' | 'short_break' | 'long_break')}
-            tabs={[
-              { value: 'all', label: 'All' },
-              { value: 'focus', label: 'Focus' },
-              { value: 'short_break', label: 'Short Break' },
-              { value: 'long_break', label: 'Long Break' },
-            ]}
-          />
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1,2,3].map(i => <div key={i} className="h-12 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />)}
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1,2,3,4,5].map(i => <div key={i} className="h-16 animate-pulse glass-card" />)}
+              </div>
+            ) : sessions && sessions.length > 0 ? (
+              <div className="space-y-3">
+                {sessions.map(session => (
+                  <div key={session.id} className="flex items-center gap-4 p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white ${session.type === 'focus' ? 'bg-primary-500' : session.type === 'short_break' ? 'bg-success-500' : 'bg-warning-500'}`}>
+                      {session.type === 'focus' && <Brain className="w-6 h-6" />}
+                      {session.type === 'short_break' && <Coffee className="w-6 h-6" />}
+                      {session.type === 'long_break' && <Clock className="w-6 h-6" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-neutral-900 dark:text-white capitalize">{session.type.replace('_', ' ')}</p>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+                        <Clock className="w-3 h-3" />
+                        {session.duration_minutes}m • {format(new Date(session.started_at), 'MMM d, yyyy h:mm a')}
+                      </p>
+                    </div>
+                    <Badge variant={session.status === 'completed' ? 'success' : session.status === 'cancelled' ? 'danger' : 'warning'} size="sm" className="capitalize">
+                      {session.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Target className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+                <p className="text-neutral-500 dark:text-neutral-400 mb-4">No sessions yet</p>
+                <p className="text-sm text-neutral-400 dark:text-neutral-500 mb-4">Start your first focus session above</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Stats */}
+        <Card variant="default" glass={true}>
+          <CardHeader>
+            <CardTitle>Focus Statistics</CardTitle>
+            <CardDescription>Your productivity this week</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="glass-card p-4 rounded-xl text-center">
+                <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                  {stats?.total_focus_minutes || 0}m
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Focus Time</p>
+              </div>
+              <div className="glass-card p-4 rounded-xl text-center">
+                <p className="text-2xl font-bold text-success-600 dark:text-success-400">
+                  {stats?.streak_days || 0}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Day Streak</p>
+              </div>
+              <div className="glass-card p-4 rounded-xl text-center">
+                <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                  {stats?.total_sessions || 0}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Sessions</p>
+              </div>
+              <div className="glass-card p-4 rounded-xl text-center">
+                <p className="text-2xl font-bold text-warning-600 dark:text-warning-400">
+                  {stats?.average_session_length || 0}m
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Avg Session</p>
+              </div>
             </div>
-          ) : sessions && sessions.length > 0 ? (
-            <div className="space-y-2">
-              {sessions.map(session => (
-                <div key={session.id} className="flex items-center gap-4 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{
-                      backgroundColor: session.type === 'focus' ? 'rgba(14, 165, 233, 0.2)' : session.type === 'short_break' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'
-                    }}
-                  >
-                    {session.type === 'focus' && <Brain className="w-5 h-5 text-primary-600 dark:text-primary-400" />}
-                    {session.type === 'short_break' && <Coffee className="w-5 h-5 text-success-600 dark:text-success-400" />}
-                    {session.type === 'long_break' && <Clock className="w-5 h-5 text-warning-600 dark:text-warning-400" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium capitalize text-neutral-900 dark:text-white">{session.type.replace('_', ' ')}</p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      {format(new Date(session.started_at), 'MMM d, h:mm a')} • {session.completed_minutes} min
-                    </p>
-                  </div>
-                  <Badge
-                    variant={session.status === 'completed' ? 'success' : session.status === 'cancelled' ? 'danger' : 'default'}
-                    size="sm"
-                  >
-                    {session.status}
-                  </Badge>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {timerPresets.map(preset => (
+                <div key={preset.key} className="glass-card p-4 rounded-xl text-center">
+                  <preset.icon className={`w-6 h-6 mx-auto mb-2 ${preset.color === 'primary' ? 'text-primary-500' : preset.color === 'success' ? 'text-success-500' : 'text-warning-500'}`} />
+                  <p className="font-medium text-neutral-900 dark:text-white capitalize">{preset.label}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {preset.defaultMinutes}m default
+                  </p>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-neutral-500 dark:text-neutral-400 mb-4">No sessions yet</p>
-              <Button variant="primary" icon={<Play className="w-4 h-4" />} onClick={handleStart}>
-                Start your first session
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Settings Modal */}
       <Modal
@@ -310,19 +315,21 @@ export default function PomodoroPage() {
       >
         <div className="space-y-4">
           {timerPresets.map(preset => (
-            <div key={preset.key} className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
-              <div className="flex items-center gap-3">
-                <preset.icon className={cn('w-5 h-5', preset.color === 'primary' ? 'text-primary-600' : preset.color === 'success' ? 'text-success-600' : 'text-warning-600')} />
-                <span className="font-medium capitalize">{preset.label}</span>
+            <div key={preset.key} className="space-y-2">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 capitalize">
+                {preset.label} Duration
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={customMinutes[preset.key]}
+                  onChange={e => setCustomMinutes(prev => ({ ...prev, [preset.key]: Number(e.target.value) || preset.defaultMinutes }))}
+                  className="w-24"
+                />
+                <span className="text-sm text-neutral-500 dark:text-neutral-400">minutes</span>
               </div>
-              <Input
-                type="number"
-                min={1}
-                max={120}
-                value={customMinutes[preset.key] || POMODORO_PRESETS[preset.key]}
-                onChange={e => setCustomMinutes(prev => ({ ...prev, [preset.key]: parseInt(e.target.value) || POMODORO_PRESETS[preset.key] }))}
-                className="w-24"
-              />
             </div>
           ))}
           <div className="flex justify-end gap-3 pt-4">

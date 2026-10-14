@@ -43,10 +43,10 @@ export function Progress({
         {label && <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{label}</span>}
         {showLabel && <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">{Math.round(percentage)}%</span>}
       </div>
-      <div className={cn('relative w-full bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden', sizes[size])}>
+      <div className={cn('relative w-full progress-bar', sizes[size])}>
         <div
           className={cn(
-            'h-full rounded-full transition-all duration-500 ease-out',
+            'progress-bar-fill rounded-full transition-all duration-500 ease-out',
             variants[variant]
           )}
           style={{ width: `${percentage}%` }}
@@ -166,7 +166,7 @@ export function StepProgress({ steps, variant = 'primary', className }: StepProg
                 step.completed
                   ? `bg-${variant === 'success' ? 'success' : variant === 'primary' ? 'primary' : 'neutral'}-500 text-white`
                   : step.current
-                  ? `bg-${variant === 'success' ? 'success' : variant === 'primary' ? 'primary' : 'neutral'}-500 text-white ring-4`
+                  ? `bg-${variant === 'success' ? 'success' : variant === 'primary' ? 'primary' : 'neutral'}-500 text-white ring-4 ring-${variant === 'success' ? 'success' : variant === 'primary' ? 'primary' : 'neutral'}-500/30`
                   : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400'
               )}
             >

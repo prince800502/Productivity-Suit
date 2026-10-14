@@ -2,7 +2,7 @@ import { cn } from '../utils';
 
 export interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'outline';
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'outline' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   dot?: boolean;
   className?: string;
@@ -23,6 +23,7 @@ export function Badge({
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300',
     danger: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-300',
     outline: 'bg-transparent border border-neutral-300 text-neutral-700 dark:border-neutral-600 dark:text-neutral-300',
+    glass: 'glass badge-glass',
   };
 
   const sizes = {
@@ -39,6 +40,7 @@ export function Badge({
     warning: 'bg-warning-500',
     danger: 'bg-danger-500',
     outline: 'bg-neutral-500',
+    glass: 'bg-neutral-500',
   };
 
   return (

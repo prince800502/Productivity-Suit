@@ -9,7 +9,8 @@ import {
   Button, Input, Select, Badge, Progress, Modal, Tabs
 } from '@productivity-suite/ui';
 import { useBudgets, useCreateBudget, useUpdateBudget, useDeleteBudget, useCurrentBudget, useBudgetProgress, useCategoryBudgets, useCreateCategoryBudget, useUpdateCategoryBudget, useDeleteCategoryBudget, useSavingsGoals, useCreateSavingsGoal, useUpdateSavingsGoal, useDeleteSavingsGoal, useAddSavingsContribution, BudgetForm, CategoryBudgetForm, SavingsGoalForm, SavingsContributionForm } from '@productivity-suite/core';
-import { categoryColors, categoryIcons, formatCurrency } from '@productivity-suite/ui';
+import { useAuth } from '@productivity-suite/core';
+import { categoryColors, formatCurrency, CategoryIcon } from '@productivity-suite/ui';
 import type { ExpenseCategory } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +35,6 @@ function BudgetTabContent({
   budgetsLoading,
   categories,
   categoryColors,
-  categoryIcons,
   formatCurrency,
   format,
   isBudgetModalOpen,
@@ -73,7 +73,7 @@ function BudgetTabContent({
       <Tabs value="budget" onChange={() => {}} tabs={[
         { value: 'budget', label: 'Budgets', icon: <PiggyBank className="w-4 h-4" /> },
         { value: 'savings', label: 'Savings Goals', icon: <Target className="w-4 h-4" /> },
-      ]} fullWidth />
+      ]} fullWidth variant="glass" />
 
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -87,32 +87,32 @@ function BudgetTabContent({
         </div>
 
         {currentBudget && budgetProgress && (
-          <Card>
+          <Card variant="default" padding="md" glass={true}>
             <CardHeader>
               <CardTitle>Current Month Budget</CardTitle>
               <CardDescription>{format(new Date(currentMonth + '-01'), 'MMMM yyyy')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div>
+                <div className="glass-card p-4 rounded-xl">
                   <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Budget</p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {formatCurrency(budgetProgress.budget, budgetProgress.currency)}
                   </p>
                 </div>
-                <div>
+                <div className="glass-card p-4 rounded-xl">
                   <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Spent</p>
                   <p className="text-2xl font-bold text-danger-600 dark:text-danger-400">
                     {formatCurrency(budgetProgress.spent, budgetProgress.currency)}
                   </p>
                 </div>
-                <div>
+                <div className="glass-card p-4 rounded-xl">
                   <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Remaining</p>
                   <p className="text-2xl font-bold text-success-600 dark:text-success-400">
                     {formatCurrency(budgetProgress.remaining, budgetProgress.currency)}
                   </p>
                 </div>
-                <div>
+                <div className="glass-card p-4 rounded-xl">
                   <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Progress</p>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-white">
                     {budgetProgress.percentage.toFixed(1)}%
@@ -131,7 +131,7 @@ function BudgetTabContent({
           </Card>
         )}
 
-        <Card>
+        <Card variant="default" padding="md" glass={true}>
           <CardHeader className="pb-2">
             <CardTitle>Category Budgets</CardTitle>
             <CardDescription>{currentBudget ? 'Set limits for each spending category' : 'Create a monthly budget first'}</CardDescription>
@@ -141,17 +141,17 @@ function BudgetTabContent({
               <>
                 {budgetProgress && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    {categories.map((cat) => {
+                    {categories.map((cat: { value: ExpenseCategory; label: string }) => {
                       const catData = (budgetProgress.categoryBreakdown as Record<ExpenseCategory, { spent: number; budget: number; percentage: number }>)[cat.value];
                       const percentage = catData?.budget && catData.budget > 0 ? (catData.spent / catData.budget) * 100 : 0;
                       const isOver = percentage > 100;
                       return (
-                        <div key={cat.value} className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${categoryColors[cat.value]}20` }}>
-                              <span className="text-lg">{categoryIcons[cat.value]}</span>
+                        <div key={cat.value} className="p-4 rounded-xl glass-card">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${categoryColors[cat.value]}20` }}>
+                              <CategoryIcon category={cat.value} size={20} className="text-lg" />
                             </div>
-                            <span className="text-sm font-medium text-neutral-900 dark:text-white">{cat.label}</span>
+                            <span className="text-sm font-medium text-neutral-900 dark:text-white truncate">{cat.label}</span>
                           </div>
                           <div className="space-y-1">
                             <div className="flex justify-between text-sm">
@@ -186,7 +186,7 @@ function BudgetTabContent({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="default" padding="md" glass={true}>
           <CardHeader>
             <CardTitle>Budget History</CardTitle>
             <CardDescription>Previous months' budgets and spending</CardDescription>
@@ -194,12 +194,12 @@ function BudgetTabContent({
           <CardContent>
             {budgetsLoading ? (
               <div className="space-y-3">
-                {[1,2,3].map(i => <div key={i} className="h-16 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />)}
+                {[1,2,3].map(i => <div key={i} className="h-16 animate-pulse glass-card" />)}
               </div>
             ) : budgets && budgets.length > 0 ? (
               <div className="space-y-3">
-                {budgets.map(budget => (
-                  <div key={budget.id} className="flex items-center justify-between p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                {budgets.map((budget: { id: string; month: string; amount: number; currency: string }) => (
+                  <div key={budget.id} className="flex items-center justify-between p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                         <PiggyBank className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -309,7 +309,7 @@ function SavingsTabContent({
         </Button>
       </div>
 
-      <Card>
+      <Card variant="default" padding="md" glass={true}>
         <CardHeader>
           <CardTitle>Your Savings Goals</CardTitle>
           <CardDescription>Track progress and add contributions</CardDescription>
@@ -317,15 +317,15 @@ function SavingsTabContent({
         <CardContent>
           {savingsLoading ? (
             <div className="space-y-3">
-              {[1,2,3].map(i => <div key={i} className="h-24 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />)}
+              {[1,2,3].map(i => <div key={i} className="h-24 animate-pulse glass-card" />)}
             </div>
           ) : savingsGoals && savingsGoals.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savingsGoals.map(goal => {
+              {savingsGoals.map((goal: { id: string; target_amount: number; current_amount: number; is_completed: boolean; color: string; icon: string | null; name: string; description: string | null; currency: string; target_date: string | null }) => {
                 const percentage = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
                 const isCompleted = goal.is_completed;
                 return (
-                  <Card key={goal.id} className="overflow-hidden" variant={isCompleted ? 'success' : 'default'}>
+                  <Card key={goal.id} variant="default" glass={true} className={`overflow-hidden ${isCompleted ? 'border-success-300 dark:border-success-700 bg-success-50/50 dark:bg-success-900/20' : ''}`}>
                     <div className="h-3" style={{ backgroundColor: goal.color }} />
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between mb-4">
@@ -358,7 +358,7 @@ function SavingsTabContent({
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+                      <div className="flex gap-2 mt-4 pt-4 border-t border-neutral-200/50 dark:border-neutral-800/50">
                         <Button variant="outline" size="sm" className="flex-1" onClick={() => handleAddContribution(goal)} disabled={isCompleted}>
                           Add Money
                         </Button>
@@ -427,6 +427,9 @@ function SavingsTabContent({
 }
 
 export default function BudgetsPage() {
+  const { profile } = useAuth();
+  const userCurrency = profile?.currency || 'USD';
+  
   const [activeTab, setActiveTab] = useState<'budget' | 'savings'>('budget');
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<any>(null);
@@ -469,7 +472,7 @@ export default function BudgetsPage() {
     defaultValues: { currency: 'USD', current_amount: 0, color: '#0ea5e9' },
   });
 
-  const { register: regContrib, handleSubmit: handleSubmitContrib, reset: resetContrib, formState: { errors: contribErrors, isSubmitting: contribSubmitting } } = useForm<SavingsContributionForm>({
+  const { register: regContrib, handleSubmit: handleSubmitContrib, reset: resetContrib, setValue: setValueContrib, formState: { errors: contribErrors, isSubmitting: contribSubmitting } } = useForm<SavingsContributionForm>({
     defaultValues: { amount: 0 },
   });
 
@@ -571,7 +574,7 @@ export default function BudgetsPage() {
       <Tabs value={activeTab} onChange={(value: string) => setActiveTab(value as 'budget' | 'savings')} tabs={[
         { value: 'budget', label: 'Budgets', icon: <PiggyBank className="w-4 h-4" /> },
         { value: 'savings', label: 'Savings Goals', icon: <Target className="w-4 h-4" /> },
-      ]} fullWidth />
+      ]} fullWidth variant="glass" />
 
       {activeTab === 'budget' && (
         <BudgetTabContent
@@ -582,7 +585,6 @@ export default function BudgetsPage() {
           budgetsLoading={budgetsLoading}
           categories={categories}
           categoryColors={categoryColors}
-          categoryIcons={categoryIcons}
           formatCurrency={formatCurrency}
           format={format}
           isBudgetModalOpen={isBudgetModalOpen}
@@ -615,7 +617,6 @@ export default function BudgetsPage() {
           setValueCat={setValueCat}
           onSubmitBudget={onSubmitBudget}
           onSubmitCategoryBudget={onSubmitCategoryBudget}
-          handleEditCategoryBudget={handleEditCategoryBudget}
         />
       )}
 
@@ -640,7 +641,6 @@ export default function BudgetsPage() {
           deleteSavingsGoal={deleteSavingsGoal}
           createSavingsGoal={createSavingsGoal}
           updateSavingsGoal={updateSavingsGoal}
-          deleteSavingsGoal={deleteSavingsGoal}
           savingsErrors={savingsErrors}
           savingsSubmitting={savingsSubmitting}
           contribErrors={contribErrors}
@@ -653,7 +653,6 @@ export default function BudgetsPage() {
           setValueContrib={setValueContrib}
           onSubmitSavingsGoal={onSubmitSavingsGoal}
           onSubmitContribution={onSubmitContribution}
-          handleEditSavingsGoal={handleEditSavingsGoal}
         />
       )}
     </div>

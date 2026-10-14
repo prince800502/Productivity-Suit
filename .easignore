@@ -1,0 +1,15 @@
+# Only exclude the absolutely necessary
+node_modules/
+.pnpm-store/
+.turbo/
+.expo/
+dist/
+build/
+.next/
+out/
+brag-output/
+.claude/
+.agents/
+.env
+*.log
+*.tmp

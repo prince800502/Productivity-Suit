@@ -1,6 +1,7 @@
 export * from './theme/ThemeProvider';
 export * from './theme/tokens';
 export * from './utils';
+export * from './utils/categoryIcons';
 export * from './components/Button';
 export * from './components/Input';
 export * from './components/Card';
@@ -13,4 +14,7 @@ export * from './components/Toast';
 export * from './components/Progress';
 export * from './components/Alert';
 export * from './components/Avatar';
+export * from './components/Popover';
+export * from './components/ScrollArea';
+export { ToggleSwitch } from './components/Switch';
 export * from './Providers';

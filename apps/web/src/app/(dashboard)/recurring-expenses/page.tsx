@@ -9,7 +9,8 @@ import {
   Button, Input, Select, Badge, Progress, Modal, Switch, Tabs
 } from '@productivity-suite/ui';
 import { useRecurringExpenses, useCreateRecurringExpense, useUpdateRecurringExpense, useDeleteRecurringExpense, useToggleRecurringExpenseActive, useUpcomingPayments, useMonthlySubscriptionTotal, RecurringExpenseForm, RecurringExpense, RecurringFrequency, UpcomingPayment } from '@productivity-suite/core';
-import { categoryColors, categoryIcons, formatCurrency } from '@productivity-suite/ui';
+import { useAuth } from '@productivity-suite/core';
+import { categoryColors, formatCurrency, CategoryIcon } from '@productivity-suite/ui';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -80,8 +81,6 @@ function RecurringExpensesContent({
   refetch,
   upcomingPayments,
   monthlyTotal,
-  categoryColors,
-  categoryIcons,
   formatCurrency,
   format,
   getFrequencyLabel,
@@ -131,7 +130,7 @@ function RecurringExpensesContent({
                 <div key={expense.id} className="flex items-center justify-between p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${categoryColors[expense.category]}20` }}>
-                      <span className="text-xl">{categoryIcons[expense.category]}</span>
+                      <CategoryIcon category={expense.category} size={24} className="text-xl" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -220,6 +219,9 @@ function RecurringExpensesContent({
 }
 
 export default function RecurringExpensesPage() {
+  const { profile } = useAuth();
+  const userCurrency = profile?.currency || 'USD';
+  
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming'>('active');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
@@ -275,25 +277,6 @@ export default function RecurringExpensesPage() {
     setIsModalOpen(true);
   };
 
-  const getFrequencyLabel = (freq: RecurringFrequency) => {
-    switch (freq) {
-      case 'daily': return 'Daily';
-      case 'weekly': return 'Weekly';
-      case 'monthly': return 'Monthly';
-      case 'yearly': return 'Yearly';
-      default: return freq;
-    }
-  };
-
-  const getDaysUntil = (dateStr: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const target = new Date(dateStr);
-    target.setHours(0, 0, 0, 0);
-    const diff = Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return diff;
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -313,7 +296,7 @@ export default function RecurringExpensesPage() {
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Monthly Subscription Total</p>
               <p className="text-3xl font-bold text-neutral-900 dark:text-white">
-                {formatCurrency(monthlyTotal || 0, 'USD')}
+                {formatCurrency(monthlyTotal || 0, userCurrency)}
               </p>
             </div>
             <div className="w-16 h-16 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
@@ -342,7 +325,7 @@ export default function RecurringExpensesPage() {
                   <div key={payment.id} className="flex items-center justify-between p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${categoryColors[payment.category]}20` }}>
-                        <span className="text-xl">{categoryIcons[payment.category]}</span>
+                        <CategoryIcon category={payment.category} size={24} className="text-xl" />
                       </div>
                       <div>
                         <p className="font-medium text-neutral-900 dark:text-white">{payment.name}</p>
@@ -385,8 +368,6 @@ export default function RecurringExpensesPage() {
         refetch={refetch}
         upcomingPayments={upcomingPayments}
         monthlyTotal={monthlyTotal}
-        categoryColors={categoryColors}
-        categoryIcons={categoryIcons}
         formatCurrency={formatCurrency}
         format={format}
         getFrequencyLabel={getFrequencyLabel}
@@ -411,4 +392,3 @@ export default function RecurringExpensesPage() {
     </div>
   );
 }
-

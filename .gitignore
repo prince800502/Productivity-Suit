@@ -2,6 +2,7 @@ cd# Dependencies
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Build outputs
 .next/
@@ -55,3 +56,34 @@ next-env.d.ts
 *.pem
 .vercel
 .netlify
+# Build and debug logs
+*.log
+*.log.*
+build.log*
+inspect-output/
+
+# Generated media and temporary outputs
+brag-output/
+
+# Local caches
+.cache/
+.tmp/
+temp/
+# Supabase CLI temporary state
+apps/web/supabase/.temp/
+
+# Build and debug logs
+*.log
+*.log.*
+build.log*
+inspect-output/
+
+# Generated output
+brag-output/
+
+# Local caches and temporary files
+.cache/
+.tmp/
+temp/
+# Supabase temporary files
+apps/web/supabase/.temp/

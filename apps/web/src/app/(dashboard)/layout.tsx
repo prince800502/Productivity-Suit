@@ -7,11 +7,13 @@ import { cn } from '@productivity-suite/ui';
 import { 
   LayoutDashboard, Wallet, CheckSquare, Timer, Target, 
   Calendar, BarChart3, Settings, Menu, X, ChevronRight,
-  Moon, Sun, Bell, LogOut, User, HelpCircle, Sparkles,
-  PiggyBank, Flag, Heart, Bot, BellRing
+  Moon, Sun, LogOut, User, HelpCircle, Sparkles,
+  PiggyBank, Flag, Heart, Bot, BellRing, GraduationCap,
+  BookOpen, Loader2
 } from 'lucide-react';
-import { Button, Avatar, Dropdown, Tooltip } from '@productivity-suite/ui';
-import { useAuth, signOut } from '@productivity-suite/core';
+import { Button, Avatar, Dropdown } from '@productivity-suite/ui';
+import { useAuth } from '@productivity-suite/core';
+import { useTheme } from '@productivity-suite/ui';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -23,60 +25,96 @@ const navigation = [
   { name: 'Pomodoro', href: '/pomodoro', icon: Timer },
   { name: 'Routines', href: '/routines', icon: Target },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Attendance', href: '/attendance', icon: BookOpen },
+  { name: 'College', href: '/college', icon: GraduationCap },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'AI Assistant', href: '/ai', icon: Bot },
   { name: 'Notifications', href: '/notifications', icon: BellRing },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-const userMenuItems = [
-  { label: 'Profile', value: 'profile', icon: User as any },
-  { label: 'Settings', value: 'settings', icon: Settings as any },
-  { label: 'Help & Support', value: 'help', icon: HelpCircle as any },
+// User menu items - will be generated dynamically to support loading state
+const getUserMenuItems = (isSigningOut: boolean) => [
+  { label: 'Profile', value: 'profile', icon: <User className="w-4 h-4" /> },
+  { label: 'Settings', value: 'settings', icon: <Settings className="w-4 h-4" /> },
+  { label: 'Help & Support', value: 'help', icon: <HelpCircle className="w-4 h-4" /> },
   { divider: true },
-  { label: 'Sign Out', value: 'signout', icon: LogOut as any, danger: true },
+  { 
+    label: 'Sign Out', 
+    value: 'signout', 
+    icon: isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />, 
+    danger: true,
+    disabled: isSigningOut
+  },
 ];
+
+// Dropdown header with user info
+const getUserMenuHeader = (profile: any, user: any) => (
+  <div className="flex items-center gap-3">
+    <Avatar
+      src={user?.user_metadata?.avatar_url}
+      name={profile?.full_name || user?.email}
+      size="md"
+    />
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-semibold text-neutral-900 dark:text-white truncate">
+        {profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+      </p>
+      <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+        {user?.email}
+      </p>
+    </div>
+  </div>
+);
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, signOut: handleSignOut } = useAuth();
+  const { toggleTheme, resolvedMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleUserSelect = async (value: string) => {
-    setUserMenuOpen(false);
     if (value === 'signout') {
-      await handleSignOut();
+      setIsSigningOut(true);
+      try {
+        await handleSignOut();
+        // The auth state change will redirect via middleware
+      } catch (error) {
+        console.error('Sign out error:', error);
+      } finally {
+        setIsSigningOut(false);
+      }
     } else if (value === 'settings') {
       router.push('/settings');
     } else if (value === 'profile') {
-      router.push('/settings/profile');
+      router.push('/settings'); // Settings page defaults to Profile tab
+    } else if (value === 'help') {
+      // No dedicated help page yet - could open external docs or show toast
+      // For now, navigate to settings which has notification preferences
+      router.push('/settings');
     }
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
+    <div className="min-h-screen bg-neutral-50 dark:bg-transparent relative">
+      {/* Ambient background glow */}
+      <div className={`ambient-bg ${resolvedMode}`} aria-hidden="true">
+        <div className="glow-3" aria-hidden="true" />
+      </div>
+      
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 glass-strong border-r transition-transform duration-300 ease-in-out lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         aria-label="Main navigation"
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 p-4 border-b border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center gap-3 p-4 border-b border-neutral-200/50 dark:border-neutral-800/50">
             <Link href="/dashboard" className="flex items-center gap-2" aria-label="Productivity Suite Home">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
@@ -104,15 +142,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Link
                       href={item.href}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                        'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative overflow-hidden',
                         isActive
-                          ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                          : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                          ? 'bg-primary-500/10 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 shadow-sm before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary-500/10 before:to-secondary-500/10'
+                          : 'text-neutral-600 hover:bg-neutral-100/50 dark:text-neutral-400 dark:hover:bg-neutral-800/50'
                       )}
                       aria-current={isActive ? 'page' : undefined}
                     >
-                      <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                      {item.name}
+                      <span className="relative z-10 flex items-center justify-center w-5 h-5">
+                        <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+                      </span>
+                      <span className="relative z-10">{item.name}</span>
                     </Link>
                   </li>
                 );
@@ -121,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
 
           {/* Bottom section */}
-          <div className="p-4 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="p-4 border-t border-neutral-200/50 dark:border-neutral-800/50">
             <div className="flex items-center gap-3">
               <Avatar
                 src={user?.user_metadata?.avatar_url}
@@ -141,64 +181,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-30 glass-strong border-b">
+          <div className="flex items-center justify-between h-14 px-4 sm:px-6 lg:px-8">
             <button
-              className="lg:hidden p-2 rounded-lg text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="lg:hidden p-2 rounded-lg text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open sidebar"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
 
             <div className="flex-1 lg:hidden" />
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {/* Theme toggle */}
-              <Tooltip content="Toggle theme" position="bottom">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={<Moon className="w-5 h-5" />}
-                  aria-label="Toggle dark mode"
-                />
-              </Tooltip>
-
-              {/* Notifications */}
-              <Tooltip content="Notifications" position="bottom">
-                <Button variant="ghost" size="sm" icon={<Bell className="w-5 h-5" />} aria-label="Notifications" />
-              </Tooltip>
+              <Button
+                variant="glass"
+                size="sm"
+                icon={resolvedMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                aria-label="Toggle dark mode"
+                onClick={toggleTheme}
+              />
 
               {/* User menu */}
               <Dropdown
                 trigger={
-                  <Tooltip content="User menu" position="bottom">
-                    <Button variant="ghost" size="sm" className="gap-2 p-1.5">
-                      <Avatar
-                        src={user?.user_metadata?.avatar_url}
-                        name={profile?.full_name || user?.email}
-                        size="sm"
-                      />
-                      <span className="hidden sm:block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                        {profile?.full_name || user?.email?.split('@')[0] || 'User'}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-neutral-400" />
-                    </Button>
-                  </Tooltip>
+                  <Button variant="ghost" size="sm" className="gap-2 p-1.5">
+                    <Avatar
+                      src={user?.user_metadata?.avatar_url}
+                      name={profile?.full_name || user?.email}
+                      size="sm"
+                    />
+                    <span className="hidden sm:block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      {profile?.full_name || user?.email?.split('@')[0] || 'User'}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-neutral-400" />
+                  </Button>
                 }
-                items={userMenuItems}
+                items={getUserMenuItems(isSigningOut)}
                 onSelect={handleUserSelect}
                 align="right"
+                header={getUserMenuHeader(profile, user)}
               />
             </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8" id="main-content" tabIndex={-1}>
+        {/* Page content - reduced top padding to eliminate blank space */}
+        <main className="px-4 sm:px-6 lg:px-8 py-4" id="main-content" tabIndex={-1}>
           {children}
         </main>
       </div>

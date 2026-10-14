@@ -13,7 +13,7 @@ export interface Tab {
 interface TabsContextType {
   value: string;
   onChange: (value: string) => void;
-  variant?: 'line' | 'enclosed' | 'soft' | 'pills';
+  variant?: 'line' | 'enclosed' | 'soft' | 'pills' | 'glass';
   fullWidth?: boolean;
 }
 
@@ -29,7 +29,7 @@ function useTabsContext() {
 
 const variants = {
   line: {
-    container: 'border-b border-neutral-200 dark:border-neutral-800',
+    container: 'border-b border-neutral-200/50 dark:border-neutral-800/50',
     tab: 'border-b-2 -mb-px',
     active: 'border-primary-600 text-primary-600 dark:text-primary-400',
     inactive: 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200',
@@ -37,20 +37,26 @@ const variants = {
   enclosed: {
     container: '',
     tab: 'rounded-lg',
-    active: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 shadow-sm',
-    inactive: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800',
+    active: 'bg-primary-100/50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 shadow-sm',
+    inactive: 'text-neutral-600 hover:bg-neutral-100/50 dark:text-neutral-400 dark:hover:bg-neutral-800/50',
   },
   soft: {
     container: '',
     tab: 'rounded-lg',
-    active: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300',
-    inactive: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800',
+    active: 'bg-primary-100/50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300',
+    inactive: 'text-neutral-600 hover:bg-neutral-100/50 dark:text-neutral-400 dark:hover:bg-neutral-800/50',
   },
   pills: {
-    container: 'bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg',
+    container: 'bg-neutral-100/50 dark:bg-neutral-800/50 p-1 rounded-lg',
     tab: 'rounded-md',
-    active: 'bg-white dark:bg-neutral-900 text-primary-700 dark:text-primary-300 shadow',
-    inactive: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800',
+    active: 'glass bg-white dark:bg-neutral-900 text-primary-700 dark:text-primary-300 shadow-sm',
+    inactive: 'text-neutral-600 hover:bg-neutral-100/50 dark:text-neutral-400 dark:hover:bg-neutral-800/50',
+  },
+  glass: {
+    container: 'glass rounded-xl p-1',
+    tab: 'rounded-lg',
+    active: 'bg-white/90 dark:bg-neutral-950/90 text-primary-700 dark:text-primary-300 shadow-sm',
+    inactive: 'text-neutral-600 hover:bg-white/50 dark:hover:bg-neutral-800/50',
   },
 };
 
@@ -67,7 +73,7 @@ const handleKeyDown = (event: KeyboardEvent, tabs: Tab[], index: number, onChang
   }
 };
 
-function renderTabList({ tabs = [], value, onChange, variant = 'line', fullWidth = false }: { tabs: Tab[]; value: string; onChange: (value: string) => void; variant: 'line' | 'enclosed' | 'soft' | 'pills'; fullWidth: boolean }) {
+function renderTabList({ tabs = [], value, onChange, variant = 'line', fullWidth = false }: { tabs: Tab[]; value: string; onChange: (value: string) => void; variant: 'line' | 'enclosed' | 'soft' | 'pills' | 'glass'; fullWidth: boolean }) {
   const { container, tab, active, inactive } = variants[variant];
 
   return (
@@ -99,7 +105,7 @@ function renderTabList({ tabs = [], value, onChange, variant = 'line', fullWidth
           {tab.icon && <span className="h-4 w-4">{tab.icon}</span>}
           {tab.label}
           {tab.badge !== undefined && (
-            <span className="ml-1.5 px-1.5 py-0.5 text-xs font-medium bg-neutral-200 dark:bg-neutral-700 rounded-full">
+            <span className="ml-1.5 px-1.5 py-0.5 text-xs font-medium bg-neutral-200/50 dark:bg-neutral-700/50 rounded-full">
               {tab.badge}
             </span>
           )}
@@ -132,7 +138,7 @@ export interface TabsProps {
   tabs?: Tab[];
   value: string;
   onChange: (value: string) => void;
-  variant?: 'line' | 'enclosed' | 'soft' | 'pills';
+  variant?: 'line' | 'enclosed' | 'soft' | 'pills' | 'glass';
   className?: string;
   fullWidth?: boolean;
   children?: ReactNode;
@@ -168,10 +174,11 @@ export function TabsList({ children, className }: TabsListProps) {
   const { variant = 'line', fullWidth = false } = useTabsContext();
 
   const variantStyles = {
-    line: 'border-b border-neutral-200 dark:border-neutral-800',
+    line: 'border-b border-neutral-200/50 dark:border-neutral-800/50',
     enclosed: '',
     soft: '',
-    pills: 'bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg',
+    pills: 'bg-neutral-100/50 dark:bg-neutral-800/50 p-1 rounded-lg',
+    glass: 'glass rounded-xl p-1',
   };
 
   return (

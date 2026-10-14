@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Filter, Download, Search, ChevronDown } from 'lucide-react';
+import { Plus, Filter, Download, Search, ChevronDown, Filter as FilterIcon, X } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
   Button, Input, Select, Badge, Avatar, Dropdown, Modal, Tabs, Progress
 } from '@productivity-suite/ui';
 import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useCategoryTotals, useMonthlyBudget } from '@productivity-suite/core';
+import { useAuth } from '@productivity-suite/core';
 import { expenseSchema, ExpenseForm, ExpenseCategory } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { categoryColors, categoryIcons, formatCurrency } from '@productivity-suite/ui';
+import { categoryColors, formatCurrency, CategoryIcon } from '@productivity-suite/ui';
+import { saveAs } from 'file-saver';
 
 const categories: { value: ExpenseCategory; label: string }[] = [
   { value: 'food', label: 'Food & Dining' },
@@ -25,6 +27,9 @@ const categories: { value: ExpenseCategory; label: string }[] = [
 ];
 
 export default function ExpensesPage() {
+  const { profile } = useAuth();
+  const userCurrency = profile?.currency || 'USD';
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<(ExpenseForm & { id: string }) | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -107,6 +112,27 @@ export default function ExpensesPage() {
 
   const totalExpenses = expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
 
+  // Filters state
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // Export expenses to CSV
+  const handleExport = () => {
+    if (!expenses || expenses.length === 0) return;
+    
+    const headers = ['Date', 'Category', 'Description', 'Amount', 'Recurring'];
+    const rows = expenses.map(e => [
+      e.date,
+      e.category,
+      e.description || '',
+      e.amount.toString(),
+      e.is_recurring ? 'Yes' : 'No'
+    ]);
+    
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `expenses-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -116,10 +142,27 @@ export default function ExpensesPage() {
           <p className="text-neutral-500 dark:text-neutral-400">Track your spending and stay within budget</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" icon={<Filter className="w-4 h-4" />}>
-            Filters
-          </Button>
-          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />}>
+          <Dropdown
+            trigger={
+              <Button variant="outline" size="sm" icon={<FilterIcon className="w-4 h-4" />}>
+                Filters
+              </Button>
+            }
+            items={[
+              { label: 'Filter by Category', value: 'category', icon: null },
+              { label: 'Filter by Date Range', value: 'date', icon: null },
+              { label: 'Search Description', value: 'search', icon: null },
+              { divider: true },
+              { label: 'Clear Filters', value: 'clear', icon: X as any },
+            ]}
+            onSelect={(value) => {
+              if (value === 'clear') {
+                setFilters({ category: '', startDate: '', endDate: '', search: '' });
+              }
+            }}
+            align="right"
+          />
+          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={handleExport} disabled={!expenses || expenses.length === 0}>
             Export
           </Button>
           <Button onClick={() => { setEditingExpense(null); reset(); setIsModalOpen(true); }} icon={<Plus className="w-4 h-4" />}>
@@ -129,7 +172,7 @@ export default function ExpensesPage() {
       </div>
 
       {/* Budget Overview */}
-      <Card>
+      <Card variant="default" padding="md" glass={true}>
         <CardHeader className="pb-2">
           <CardTitle>Monthly Budget</CardTitle>
           <CardDescription>Track your spending against your monthly budget</CardDescription>
@@ -139,19 +182,19 @@ export default function ExpensesPage() {
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Spent</p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                {formatCurrency(monthlyBudget?.spent || 0)}
+                {formatCurrency(monthlyBudget?.spent || 0, monthlyBudget?.currency || userCurrency)}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Budget</p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                {formatCurrency(monthlyBudget?.budget || 0)}
+                {formatCurrency(monthlyBudget?.budget || 0, monthlyBudget?.currency || userCurrency)}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Remaining</p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                {formatCurrency(monthlyBudget?.remaining || 0)}
+                {formatCurrency(monthlyBudget?.remaining || 0, monthlyBudget?.currency || userCurrency)}
               </p>
             </div>
           </div>
@@ -166,7 +209,7 @@ export default function ExpensesPage() {
       </Card>
 
       {/* Category Breakdown */}
-      <Card>
+      <Card variant="default" padding="md" glass={true}>
         <CardHeader className="pb-2">
           <CardTitle>By Category</CardTitle>
           <CardDescription>This month's spending breakdown</CardDescription>
@@ -179,24 +222,21 @@ export default function ExpensesPage() {
                 ? (total / monthlyBudget.budget) * 100
                 : 0;
               return (
-                <div key={cat.value} className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: `${categoryColors[cat.value]}20` }}
-                    >
-                      <span className="text-lg">{categoryIcons[cat.value]}</span>
+                <div key={cat.value} className="p-4 rounded-xl glass-card">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${categoryColors[cat.value]}20` }}>
+                      <CategoryIcon category={cat.value} size={20} className="text-lg" />
                     </div>
-                    <span className="text-sm font-medium text-neutral-900 dark:text-white">{cat.label}</span>
+                    <span className="text-sm font-medium text-neutral-900 dark:text-white truncate">{cat.label}</span>
                   </div>
                   <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                    {formatCurrency(total)}
+                    {formatCurrency(total, monthlyBudget?.currency || userCurrency)}
                   </p>
                   <div className="mt-2 h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
-                        width: `${percentage}%`,
+                        width: `${Math.min(percentage, 100)}%`,
                         backgroundColor: categoryColors[cat.value],
                       }}
                     />
@@ -209,11 +249,11 @@ export default function ExpensesPage() {
       </Card>
 
       {/* Expenses List */}
-      <Card>
+      <Card variant="default" padding="md" glass={true}>
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <div>
             <CardTitle>Recent Expenses</CardTitle>
-            <CardDescription>{expenses?.length || 0} expenses • Total: {formatCurrency(totalExpenses)}</CardDescription>
+            <CardDescription>{expenses?.length || 0} expenses • Total: {formatCurrency(totalExpenses, userCurrency)}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Input
@@ -235,7 +275,7 @@ export default function ExpensesPage() {
           {isLoading ? (
             <div className="space-y-3">
               {[1,2,3,4,5].map(i => (
-                <div key={i} className="h-16 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />
+                <div key={i} className="h-16 animate-pulse glass-card" />
               ))}
             </div>
           ) : expenses && expenses.length > 0 ? (
@@ -243,13 +283,13 @@ export default function ExpensesPage() {
               {expenses.map(expense => (
                 <div
                   key={expense.id}
-                  className="flex items-center gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="flex items-center gap-4 p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow"
                 >
                   <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
                     style={{ backgroundColor: categoryColors[expense.category] }}
                   >
-                    <span className="text-lg">{categoryIcons[expense.category]}</span>
+                    <CategoryIcon category={expense.category} size={20} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-neutral-900 dark:text-white truncate">{expense.description || expense.category}</p>
@@ -257,7 +297,7 @@ export default function ExpensesPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-neutral-900 dark:text-white">
-                      {formatCurrency(expense.amount)}
+                      {formatCurrency(expense.amount, userCurrency)}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       {format(new Date(expense.date), 'MMM d, yyyy')}

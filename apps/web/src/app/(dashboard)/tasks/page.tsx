@@ -116,7 +116,7 @@ export default function TasksPage() {
               { value: 'board', label: 'Kanban Board' },
               { value: 'list', label: 'List View' },
             ]}
-            className="w-40"
+            className="w-40 glass-input"
           />
           <Button onClick={() => { setEditingTask(null); reset(); setIsModalOpen(true); }} icon={<Plus className="w-4 h-4" />}>
             New Task
@@ -126,19 +126,19 @@ export default function TasksPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card padding="md">
+        <Card variant="default" padding="md" glass={true}>
           <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Total</p>
           <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats?.total || 0}</p>
         </Card>
-        <Card padding="md">
+        <Card variant="default" padding="md" glass={true}>
           <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Completed</p>
           <p className="text-2xl font-bold text-success-600 dark:text-success-400">{stats?.completed || 0}</p>
         </Card>
-        <Card padding="md">
+        <Card variant="default" padding="md" glass={true}>
           <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">In Progress</p>
           <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">{stats?.in_progress || 0}</p>
         </Card>
-        <Card padding="md">
+        <Card variant="default" padding="md" glass={true}>
           <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Overdue</p>
           <p className="text-2xl font-bold text-danger-600 dark:text-danger-400">{stats?.overdue || 0}</p>
         </Card>
@@ -148,7 +148,7 @@ export default function TasksPage() {
       {view === 'board' && (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {tasksByStatus.map(column => (
-            <Card key={column.value} className="w-72 flex-1 h-[calc(100vh-300px)] flex flex-col">
+            <Card key={column.value} variant="default" glass={true} className="w-72 flex-1 h-[calc(100vh-300px)] flex flex-col">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
@@ -164,7 +164,7 @@ export default function TasksPage() {
                   {column.tasks.map(task => (
                     <div
                       key={task.id}
-                      className="p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-primary-200 dark:hover:border-primary-800 cursor-pointer transition-colors"
+                      className="p-3 glass-card hover:shadow-glass-hover transition-shadow cursor-pointer"
                       onClick={() => handleEdit(task)}
                     >
                       <div className="flex items-start gap-2">
@@ -226,29 +226,29 @@ export default function TasksPage() {
 
       {/* List View */}
       {view === 'list' && (
-        <Card>
+        <Card variant="default" glass={true}>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <div>
               <CardTitle>All Tasks</CardTitle>
               <CardDescription>{tasks?.length || 0} tasks</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Input placeholder="Search..." icon={<Search className="w-4 h-4" />} value={filters.search} onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))} className="w-64" />
-              <Select value={filters.status} onChange={e => setFilters(prev => ({ ...prev, status: e.target.value as TaskStatus | '' }))} options={[{ value: '', label: 'All Status' }, ...statusOptions]} className="w-36" />
-              <Select value={filters.priority} onChange={e => setFilters(prev => ({ ...prev, priority: e.target.value as TaskPriority | '' }))} options={[{ value: '', label: 'All Priority' }, ...priorityOptions]} className="w-36" />
+              <Input placeholder="Search..." icon={<Search className="w-4 h-4" />} value={filters.search} onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))} className="w-64 glass-input" />
+              <Select value={filters.status} onChange={e => setFilters(prev => ({ ...prev, status: e.target.value as TaskStatus | '' }))} options={[{ value: '', label: 'All Status' }, ...statusOptions]} className="w-36 glass-input" />
+              <Select value={filters.priority} onChange={e => setFilters(prev => ({ ...prev, priority: e.target.value as TaskPriority | '' }))} options={[{ value: '', label: 'All Priority' }, ...priorityOptions]} className="w-36 glass-input" />
             </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-3">
-                {[1,2,3,4,5].map(i => <div key={i} className="h-16 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />)}
+                {[1,2,3,4,5].map(i => <div key={i} className="h-16 animate-pulse glass-card" />)}
               </div>
             ) : tasks && tasks.length > 0 ? (
               <div className="space-y-2">
                 {tasks.map(task => (
                   <div
                     key={task.id}
-                    className="flex items-center gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                    className="flex items-center gap-4 p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow"
                     onClick={() => handleEdit(task)}
                   >
                     <button

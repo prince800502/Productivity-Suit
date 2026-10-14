@@ -1,13 +1,29 @@
 // Design Tokens - Single source of truth for the design system
+// Premium Dark Glassmorphism Design System
 
 export const colors = {
-  // Primary brand colors
+  // Primary brand colors - Deep Indigo/Violet
   primary: {
+    50: '#eef2ff',
+    100: '#e0e7ff',
+    200: '#c7d2fe',
+    300: '#a5b4fc',
+    400: '#818cf8',
+    500: '#7567FF',  // Updated: Deep Indigo
+    600: '#5c4dff',
+    700: '#4a3eff',
+    800: '#3d33e0',
+    900: '#352db8',
+    950: '#211f70',
+  },
+  
+  // Secondary/accent colors - Sky Blue/Cyan
+  secondary: {
     50: '#f0f9ff',
     100: '#e0f2fe',
     200: '#bae6fd',
     300: '#7dd3fc',
-    400: '#38bdf8',
+    400: '#38BDF8',  // Updated: Bright Sky Blue
     500: '#0ea5e9',
     600: '#0284c7',
     700: '#0369a1',
@@ -15,37 +31,38 @@ export const colors = {
     900: '#0c4a6e',
     950: '#082f49',
   },
-  
-  // Secondary/accent colors
-  secondary: {
-    50: '#fdf4ff',
-    100: '#fae8ff',
-    200: '#f5d0fe',
-    300: '#f0abfc',
-    400: '#e879f9',
-    500: '#d946ef',
-    600: '#c026d3',
-    700: '#a21caf',
-    800: '#86198f',
-    900: '#701a75',
-    950: '#4a044e',
+
+  // Tertiary accent - Violet/Purple
+  tertiary: {
+    50: '#faf5ff',
+    100: '#f3e8ff',
+    200: '#e9d5ff',
+    300: '#d8b4fe',
+    400: '#c084fc',
+    500: '#a855f7',
+    600: '#9333ea',
+    700: '#7e22ce',
+    800: '#6b21a8',
+    900: '#581c87',
+    950: '#3b0764',
   },
 
-  // Success colors
+  // Success colors - Emerald
   success: {
-    50: '#f0fdf4',
-    100: '#dcfce7',
-    200: '#bbf7d0',
-    300: '#86efac',
-    400: '#4ade80',
-    500: '#22c55e',
-    600: '#16a34a',
-    700: '#15803d',
-    800: '#166534',
-    900: '#14532d',
+    50: '#ecfdf5',
+    100: '#d1fae5',
+    200: '#a7f3d0',
+    300: '#6ee7b7',
+    400: '#34d399',
+    500: '#10b981',
+    600: '#059669',
+    700: '#047857',
+    800: '#065f46',
+    900: '#064e3b',
+    950: '#022c22',
   },
 
-  // Warning colors
+  // Warning colors - Amber
   warning: {
     50: '#fffbeb',
     100: '#fef3c7',
@@ -57,106 +74,138 @@ export const colors = {
     700: '#b45309',
     800: '#92400e',
     900: '#78350f',
+    950: '#451a03',
   },
 
-  // Error/danger colors
+  // Error/danger colors - Rose
   danger: {
-    50: '#fef2f2',
-    100: '#fee2e2',
-    200: '#fecaca',
-    300: '#fca5a5',
-    400: '#f87171',
-    500: '#ef4444',
-    600: '#dc2626',
-    700: '#b91c1c',
-    800: '#991b1b',
-    900: '#7f1d1d',
+    50: '#fff1f2',
+    100: '#ffe4e6',
+    200: '#fecdd3',
+    300: '#fda4af',
+    400: '#fb7185',
+    500: '#f43f5e',
+    600: '#e11d48',
+    700: '#be123c',
+    800: '#9f1239',
+    900: '#881337',
+    950: '#4c0519',
   },
 
-  // Neutral grays
+  // Neutral grays - Slate
   neutral: {
     0: '#ffffff',
-    50: '#fafafa',
-    100: '#f5f5f5',
-    200: '#e5e5e5',
-    300: '#d4d4d4',
-    400: '#a3a3a3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-    950: '#0a0a0a',
+    50: '#f8fafc',
+    100: '#f1f5f9',
+    200: '#e2e8f0',
+    300: '#cbd5e1',
+    400: '#94a3b8',
+    500: '#64748b',
+    600: '#475569',
+    700: '#334155',
+    800: '#1e293b',
+    900: '#0f172a',
+    950: '#020617',
   },
 
   // Semantic colors (light mode)
   light: {
-    background: '#ffffff',
-    surface: '#fafafa',
+    background: '#f8fafc',
+    surface: '#ffffff',
     surfaceElevated: '#ffffff',
-    border: '#e5e5e5',
-    borderStrong: '#d4d4d4',
+    surfaceGlass: 'rgba(255, 255, 255, 0.85)',
+    surfaceGlassStrong: 'rgba(255, 255, 255, 0.95)',
+    border: '#e2e8f0',
+    borderStrong: '#cbd5e1',
+    borderGlass: 'rgba(148, 163, 184, 0.3)',
     
-    textPrimary: '#171717',
-    textSecondary: '#525252',
-    textTertiary: '#737373',
+    textPrimary: '#0f172a',
+    textSecondary: '#475569',
+    textTertiary: '#94a3b8',
     textInverse: '#ffffff',
-    textLink: '#0284c7',
+    textLink: '#7567FF',
     
-    primary: '#0ea5e9',
-    primaryHover: '#0284c7',
-    primaryLight: '#e0f2fe',
+    primary: '#7567FF',
+    primaryHover: '#5c4dff',
+    primaryLight: '#e0e7ff',
+    primaryGlass: 'rgba(117, 103, 255, 0.1)',
     
-    secondary: '#d946ef',
-    secondaryHover: '#c026d3',
-    secondaryLight: '#fae8ff',
+    secondary: '#38BDF8',
+    secondaryHover: '#0ea5e9',
+    secondaryLight: '#e0f2fe',
+    secondaryGlass: 'rgba(56, 189, 248, 0.1)',
     
-    success: '#22c55e',
-    successLight: '#dcfce7',
+    tertiary: '#a855f7',
+    tertiaryHover: '#9333ea',
+    tertiaryLight: '#f3e8ff',
+    tertiaryGlass: 'rgba(168, 85, 247, 0.1)',
+    
+    success: '#10b981',
+    successLight: '#d1fae5',
+    successGlass: 'rgba(16, 185, 129, 0.1)',
     
     warning: '#f59e0b',
     warningLight: '#fef3c7',
+    warningGlass: 'rgba(245, 158, 11, 0.1)',
     
-    danger: '#ef4444',
-    dangerLight: '#fee2e2',
+    danger: '#f43f5e',
+    dangerLight: '#ffe4e6',
+    dangerGlass: 'rgba(244, 63, 94, 0.1)',
     
-    focusRing: '#0ea5e9',
-    overlay: 'rgba(0, 0, 0, 0.5)',
+    focusRing: '#7567FF',
+    overlay: 'rgba(15, 23, 42, 0.5)',
+    overlayStrong: 'rgba(15, 23, 42, 0.7)',
   },
 
-  // Semantic colors (dark mode)
+  // Semantic colors (dark mode) - Deep Navy with Indigo/Violet accents
   dark: {
-    background: '#0a0a0a',
-    surface: '#171717',
-    surfaceElevated: '#262626',
-    border: '#404040',
-    borderStrong: '#525252',
+    background: '#030712',           // Deeper navy for more contrast
+    backgroundSecondary: '#080F1E',  // Secondary layer
+    backgroundTertiary: '#0E172B',   // Tertiary layer
+    surface: '#0A1222',              // Card surface
+    surfaceElevated: '#111A2E',      // Elevated surface
+    surfaceGlass: 'rgba(10, 18, 34, 0.6)',    // More transparent glass
+    surfaceGlassStrong: 'rgba(10, 18, 34, 0.8)', // Stronger glass
+    border: '#141E35',               // Subtle border
+    borderStrong: '#1E2D45',         // Stronger border
+    borderGlass: 'rgba(120, 113, 255, 0.22)',  // Primary tint border
     
-    textPrimary: '#fafafa',
-    textSecondary: '#a3a3a3',
-    textTertiary: '#737373',
-    textInverse: '#0a0a0a',
-    textLink: '#38bdf8',
+    textPrimary: '#F8FAFC',          // Pure white for primary text
+    textSecondary: '#B8C5D6',        // Softer secondary
+    textTertiary: '#7A8A9F',         // Muted tertiary
+    textInverse: '#030712',
+    textLink: '#B8D0FF',             // Lighter link
     
-    primary: '#38bdf8',
-    primaryHover: '#0ea5e9',
-    primaryLight: '#0c4a6e',
+    primary: '#B8D0FF',              // Lighter indigo for dark mode
+    primaryHover: '#D0E0FF',
+    primaryLight: '#1A1860',
+    primaryGlass: 'rgba(117, 103, 255, 0.22)',
     
-    secondary: '#e879f9',
-    secondaryHover: '#d946ef',
-    secondaryLight: '#4a044e',
+    secondary: '#38BDF8',            // Bright cyan
+    secondaryHover: '#7DD3FC',
+    secondaryLight: '#082F49',
+    secondaryGlass: 'rgba(56, 189, 248, 0.18)',
     
-    success: '#4ade80',
-    successLight: '#14532d',
+    tertiary: '#D8B4FE',
+    tertiaryHover: '#E9D5FF',
+    tertiaryLight: '#3B0764',
+    tertiaryGlass: 'rgba(168, 85, 247, 0.18)',
     
-    warning: '#fbbf24',
-    warningLight: '#78350f',
+    success: '#34D399',
+    successLight: '#064E3B',
+    successGlass: 'rgba(52, 211, 153, 0.18)',
     
-    danger: '#f87171',
-    dangerLight: '#7f1d1d',
+    warning: '#FBBF24',
+    warningLight: '#451A03',
+    warningGlass: 'rgba(251, 191, 36, 0.18)',
     
-    focusRing: '#38bdf8',
-    overlay: 'rgba(0, 0, 0, 0.7)',
+    danger: '#FB7185',
+    dangerLight: '#4C0519',
+    dangerGlass: 'rgba(251, 113, 133, 0.18)',
+    
+    focusRing: '#B8D0FF',
+    overlay: 'rgba(3, 7, 18, 0.8)',
+    overlayStrong: 'rgba(3, 7, 18, 0.95)',
   },
 } as const;
 
@@ -178,11 +227,12 @@ export const spacing = {
 
 export const borderRadius = {
   none: '0',
-  sm: '0.25rem',    // 4px
-  md: '0.375rem',   // 6px
-  lg: '0.5rem',     // 8px
-  xl: '0.75rem',    // 12px
-  '2xl': '1rem',    // 16px
+  sm: '0.375rem',   // 6px
+  md: '0.5rem',     // 8px
+  lg: '0.75rem',    // 12px
+  xl: '1rem',       // 16px
+  '2xl': '1.25rem', // 20px
+  '3xl': '1.5rem',  // 24px
   full: '9999px',
 } as const;
 
@@ -218,19 +268,34 @@ export const typography = {
 
 export const shadows = {
   none: 'none',
-  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-  md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-  xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  xs: '0 1px 2px 0 rgb(0 0 0 / 0.03)',
+  sm: '0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08)',
+  md: '0 4px 8px -2px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.08)',
+  lg: '0 12px 24px -4px rgb(0 0 0 / 0.12), 0 4px 8px -4px rgb(0 0 0 / 0.1)',
+  xl: '0 20px 40px -8px rgb(0 0 0 / 0.15), 0 8px 16px -8px rgb(0 0 0 / 0.1)',
   '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
   inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
-  focus: '0 0 0 3px rgb(14 165 233 / 0.4)',
+  focus: '0 0 0 3px rgb(59 130 246 / 0.4)',
+  // Glass-specific shadows
+  glass: '0 4px 24px 0 rgb(0 0 0 / 0.12), 0 1px 3px 0 rgb(0 0 0 / 0.08)',
+  glassHover: '0 8px 32px 0 rgb(0 0 0 / 0.18), 0 2px 8px 0 rgb(0 0 0 / 0.12)',
+  glassElevated: '0 16px 48px 0 rgb(0 0 0 / 0.25), 0 4px 16px 0 rgb(0 0 0 / 0.15)',
+} as const;
+
+export const blur = {
+  none: '0',
+  sm: '4px',
+  md: '8px',
+  lg: '16px',
+  xl: '24px',
+  '2xl': '40px',
 } as const;
 
 export const transitions = {
-  fast: '150ms ease',
-  normal: '200ms ease',
-  slow: '300ms ease',
+  fast: '120ms cubic-bezier(0.4, 0, 0.2, 1)',
+  normal: '200ms cubic-bezier(0.4, 0, 0.2, 1)',
+  slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
+  spring: '400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
 } as const;
 
 export const breakpoints = {
@@ -244,12 +309,27 @@ export const breakpoints = {
 export const zIndex = {
   hide: -1,
   base: 0,
-  dropdown: 1000,
-  sticky: 1100,
-  modal: 1200,
-  popover: 1300,
-  tooltip: 1400,
-  toast: 1500,
+  dropdown: 100,
+  sticky: 200,
+  modal: 300,
+  popover: 400,
+  tooltip: 500,
+  toast: 600,
+} as const;
+
+export const glass = {
+  light: {
+    bg: 'rgba(255, 255, 255, 0.85)',
+    bgStrong: 'rgba(255, 255, 255, 0.95)',
+    border: 'rgba(148, 163, 184, 0.3)',
+    shadow: '0 4px 24px 0 rgb(0 0 0 / 0.12), 0 1px 3px 0 rgb(0 0 0 / 0.08)',
+  },
+  dark: {
+    bg: 'rgba(15, 23, 42, 0.85)',
+    bgStrong: 'rgba(15, 23, 42, 0.95)',
+    border: 'rgba(148, 163, 184, 0.15)',
+    shadow: '0 4px 24px 0 rgb(0 0 0 / 0.25), 0 1px 3px 0 rgb(0 0 0 / 0.1)',
+  },
 } as const;
 
 // Component-specific tokens
@@ -261,14 +341,14 @@ export const componentTokens = {
       lg: '3rem',      // 48px
     },
     padding: {
-      sm: '0 0.75rem',
-      md: '0 1rem',
-      lg: '0 1.5rem',
+      sm: '0 0.875rem',
+      md: '0 1.25rem',
+      lg: '0 1.75rem',
     },
     fontSize: {
-      sm: '0.875rem',
-      md: '1rem',
-      lg: '1.125rem',
+      sm: '0.8125rem',
+      md: '0.9375rem',
+      lg: '1rem',
     },
   },
   input: {
@@ -277,15 +357,22 @@ export const componentTokens = {
       md: '2.5rem',
       lg: '3rem',
     },
-    padding: '0 0.75rem',
+    padding: '0 1rem',
   },
   card: {
     padding: '1.5rem',
-    gap: '1rem',
+    gap: '1.25rem',
   },
   modal: {
     maxWidth: '32rem',
     padding: '1.5rem',
+  },
+  sidebar: {
+    width: '16rem',    // 256px
+    widthCollapsed: '4rem', // 64px
+  },
+  header: {
+    height: '4rem',    // 64px
   },
 } as const;
 
@@ -294,6 +381,8 @@ export type Spacing = typeof spacing;
 export type BorderRadius = typeof borderRadius;
 export type Typography = typeof typography;
 export type Shadows = typeof shadows;
+export type Blur = typeof blur;
 export type Transitions = typeof transitions;
 export type Breakpoints = typeof breakpoints;
 export type ZIndex = typeof zIndex;
+export type Glass = typeof glass;

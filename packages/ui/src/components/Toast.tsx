@@ -28,12 +28,12 @@ const icons = {
   default: Info,
 };
 
-const colors = {
-  success: 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800 text-success-800 dark:text-success-300',
-  error: 'bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800 text-danger-800 dark:text-danger-300',
-  warning: 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800 text-warning-800 dark:text-warning-300',
-  info: 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800 text-primary-800 dark:text-primary-300',
-  default: 'bg-neutral-50 dark:bg-neutral-900/20 border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-300',
+const glassColors = {
+  success: 'glass border-success-200/50 dark:border-success-800/50 text-success-800 dark:text-success-300',
+  error: 'glass border-danger-200/50 dark:border-danger-800/50 text-danger-800 dark:text-danger-300',
+  warning: 'glass border-warning-200/50 dark:border-warning-800/50 text-warning-800 dark:text-warning-300',
+  info: 'glass border-primary-200/50 dark:border-primary-800/50 text-primary-800 dark:text-primary-300',
+  default: 'glass border-neutral-200/50 dark:border-neutral-800/50 text-neutral-800 dark:text-neutral-300',
 };
 
 const iconColors = {
@@ -70,11 +70,11 @@ export function ToastComponent({
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-lg border shadow-lg',
+        'flex items-start gap-3 p-4 rounded-xl border shadow-glass',
         'min-w-[300px] max-w-md',
         'animate-slide-in-right',
         isExiting && 'animate-fade-out translate-x-full opacity-0',
-        colors[type]
+        glassColors[type]
       )}
       role="alert"
       aria-live="polite"

@@ -1,17 +1,29 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Bell, Moon, Sun, Monitor, Shield, Palette, Globe, CreditCard, Download, Trash2, LogOut, Mail, Key, Phone, Camera, Check, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { User, Bell, Moon, Sun, Monitor, Shield, Palette, Globe, CreditCard, Download, Trash2, LogOut, Mail, Key, Phone, Camera, Check, AlertCircle, Loader2, FileJson, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Input, Select, Switch, Badge, Avatar, Modal, Tabs, Alert, AlertTitle, AlertDescription
+  Button, Input, Select, Switch, Badge, Avatar, Modal, Tabs, Alert, AlertTitle, AlertDescription,
+  cn
 } from '@productivity-suite/ui';
 import { useAuth, signOut, updateProfile, uploadAvatar, updatePassword } from '@productivity-suite/core';
+import { useTheme, type ThemeMode } from '@productivity-suite/ui';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@productivity-suite/ui';
+import { useExpenses } from '@productivity-suite/core';
+import { useBudgets, useSavingsGoals } from '@productivity-suite/core';
+import { useGoals } from '@productivity-suite/core';
+import { useTasks } from '@productivity-suite/core';
+import { useHabits } from '@productivity-suite/core';
+import { useRoutines } from '@productivity-suite/core';
+import { useScheduleEvents } from '@productivity-suite/core';
+import { useNotifications } from '@productivity-suite/core';
+import { useRecurringExpenses } from '@productivity-suite/core';
+import { saveAs } from 'file-saver';
 import type { NotificationPreferences } from '@productivity-suite/core';
 
 const profileSchema = z.object({
@@ -39,8 +51,6 @@ const passwordSchema = z.object({
   path: ['confirmPassword'],
 });
 
-// NotificationPreferences schema is now part of profileSchema
-
 type ProfileForm = z.infer<typeof profileSchema>;
 type PasswordForm = z.infer<typeof passwordSchema>;
 
@@ -54,18 +64,129 @@ const currencies = [
 ];
 
 export default function SettingsPage() {
-  const { user, profile, updateProfile: updateProfileHook } = useAuth();
+  const { user, profile, updateProfile: updateProfileHook, profileLoaded } = useAuth();
+  const { mode, setMode } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+
+  // Track form initialization to prevent overwriting user edits
+  const formInitializedRef = useRef(false);
+  const hasUserEditsRef = useRef(false);
+
+  // Fetch data for exports
+  const { data: expenses } = useExpenses({ limit: 10000 });
+  const { data: budgets } = useBudgets({ limit: 100 });
+  const { data: savingsGoals } = useSavingsGoals({ limit: 100 });
+  const { data: goals } = useGoals({ limit: 100 });
+  const { data: tasks } = useTasks({ limit: 1000 });
+  const { data: habits } = useHabits();
+  const { data: routines } = useRoutines();
+  const { data: scheduleEvents } = useScheduleEvents();
+  const { data: notifications } = useNotifications({ limit: 1000 });
+  const { data: recurringExpenses } = useRecurringExpenses({ limit: 100 });
+
+  const handleExportJSON = async () => {
+    if (!user) return;
+    setIsExporting(true);
+    try {
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        version: '1.0',
+        profile: {
+          id: user.id,
+          email: user.email,
+          full_name: profile?.full_name,
+          currency: profile?.currency,
+          monthly_budget: profile?.monthly_budget,
+          theme: profile?.theme,
+          notification_preferences: profile?.notification_preferences,
+        },
+        expenses: expenses || [],
+        budgets: budgets || [],
+        savingsGoals: savingsGoals || [],
+        goals: goals || [],
+        tasks: tasks || [],
+        habits: habits || [],
+        routines: routines || [],
+        scheduleEvents: scheduleEvents || [],
+        notifications: notifications || [],
+        recurringExpenses: recurringExpenses || [],
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      saveAs(blob, `productivity-suite-backup-${format(new Date(), 'yyyy-MM-dd')}.json`);
+      toast({ type: 'success', title: 'Success', message: 'Data exported successfully' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to export data' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportExpensesCSV = async () => {
+    if (!expenses || expenses.length === 0) {
+      toast({ type: 'info', title: 'No Data', message: 'No expenses to export' });
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const headers = ['Date', 'Category', 'Description', 'Amount', 'Recurring'];
+      const rows = (expenses || []).map(e => [
+        e.date,
+        e.category,
+        e.description || '',
+        e.amount.toString(),
+        e.is_recurring ? 'Yes' : 'No'
+      ]);
+      const csvContent = [headers.join(','), ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, `expenses-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      toast({ type: 'success', title: 'Success', message: 'Expenses exported to CSV' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to export expenses' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportTasksCSV = async () => {
+    if (!tasks || tasks.length === 0) {
+      toast({ type: 'info', title: 'No Data', message: 'No tasks to export' });
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const headers = ['Title', 'Description', 'Status', 'Priority', 'Due Date', 'Estimated Minutes', 'Tags'];
+      const rows = (tasks || []).map(t => [
+        t.title,
+        t.description || '',
+        t.status,
+        t.priority,
+        t.due_date ? format(new Date(t.due_date), 'yyyy-MM-dd') : '',
+        t.estimated_minutes?.toString() || '',
+        (t.tags || []).join(';')
+      ]);
+      const csvContent = [headers.join(','), ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, `tasks-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      toast({ type: 'success', title: 'Success', message: 'Tasks exported to CSV' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to export tasks' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const {
     register: registerProfile,
     handleSubmit: handleSubmitProfile,
     reset: resetProfile,
     watch: watchProfile,
-    formState: { errors: profileErrors, isSubmitting: isSubmittingProfile },
+    setValue: setValueProfile,
+    formState: { errors: profileErrors, isSubmitting: isSubmittingProfile, isDirty: isProfileDirty },
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -73,7 +194,7 @@ export default function SettingsPage() {
       currency: profile?.currency || 'USD',
       monthly_budget: profile?.monthly_budget || null,
       theme: profile?.theme || 'system',
-      notification_preferences: profile?.notification_preferences || {
+      notification_preferences: (profile?.notification_preferences as { email_notifications: boolean; push_notifications: boolean; daily_summary: boolean; weekly_report: boolean; budget_alerts: boolean; task_reminders: boolean; routine_reminders: boolean }) || {
         email_notifications: true,
         push_notifications: true,
         daily_summary: true,
@@ -84,6 +205,33 @@ export default function SettingsPage() {
       },
     },
   });
+
+  // Initialize form with profile data when it loads (only once, and only if user hasn't made edits)
+  useEffect(() => {
+    if (profileLoaded && profile && !formInitializedRef.current && !hasUserEditsRef.current) {
+      resetProfile({
+        full_name: profile.full_name || '',
+        currency: profile.currency || 'USD',
+        monthly_budget: profile.monthly_budget || null,
+        theme: profile.theme || 'system',
+        notification_preferences: (profile.notification_preferences as any) || {
+          email_notifications: true,
+          push_notifications: true,
+          daily_summary: true,
+          weekly_report: false,
+          budget_alerts: true,
+          task_reminders: true,
+          routine_reminders: true,
+        },
+      });
+      formInitializedRef.current = true;
+    }
+  }, [profileLoaded, profile, resetProfile]);
+
+  // Track user edits to prevent overwriting
+  useEffect(() => {
+    hasUserEditsRef.current = isProfileDirty;
+  }, [isProfileDirty]);
 
   const {
     register: registerPassword,
@@ -96,14 +244,54 @@ export default function SettingsPage() {
 
   const onSubmitProfile = async (data: ProfileForm) => {
     try {
-      const { error } = await updateProfileHook(data);
+      // Merge submitted notification_preferences with existing profile data to preserve
+      // fields not in the form schema (quiet_hours, timezone, max_daily_notifications, etc.)
+      const existingPrefs = (profile?.notification_preferences as any) || {};
+      const submittedPrefs = (data.notification_preferences as any) || {};
+      const mergedPrefs = {
+        ...existingPrefs,
+        ...submittedPrefs,
+        // Ensure the 7 schema fields are explicitly set from submitted data
+        email_notifications: submittedPrefs.email_notifications ?? existingPrefs.email_notifications,
+        push_notifications: submittedPrefs.push_notifications ?? existingPrefs.push_notifications,
+        daily_summary: submittedPrefs.daily_summary ?? existingPrefs.daily_summary,
+        weekly_report: submittedPrefs.weekly_report ?? existingPrefs.weekly_report,
+        budget_alerts: submittedPrefs.budget_alerts ?? existingPrefs.budget_alerts,
+        task_reminders: submittedPrefs.task_reminders ?? existingPrefs.task_reminders,
+        routine_reminders: submittedPrefs.routine_reminders ?? existingPrefs.routine_reminders,
+      };
+
+      const apiData = {
+        ...data,
+        notification_preferences: mergedPrefs,
+      };
+      const { data: returnedProfile, error } = await updateProfileHook(apiData as any);
       if (error) throw error;
       toast({
         type: 'success',
         title: 'Success',
         message: 'Profile updated successfully',
       });
-      resetProfile(data);
+      // Reset form with the verified returned data from the database
+      if (returnedProfile) {
+        resetProfile({
+          full_name: returnedProfile.full_name || '',
+          currency: returnedProfile.currency || 'USD',
+          monthly_budget: returnedProfile.monthly_budget || null,
+          theme: returnedProfile.theme || 'system',
+          notification_preferences: (returnedProfile.notification_preferences as any) || {
+            email_notifications: true,
+            push_notifications: true,
+            daily_summary: true,
+            weekly_report: false,
+            budget_alerts: true,
+            task_reminders: true,
+            routine_reminders: true,
+          },
+        });
+      } else {
+        resetProfile(data);
+      }
     } catch (error: any) {
       toast({
         type: 'error',
@@ -137,7 +325,11 @@ export default function SettingsPage() {
     try {
       const { data, error } = await uploadAvatar(user.id, file);
       if (error) throw error;
-      setAvatarPreview(data?.publicUrl || null);
+      const publicUrl = data?.publicUrl || null;
+      setAvatarPreview(publicUrl);
+      // Persist avatar URL to profile
+      const { error: profileError } = await updateProfileHook({ avatar_url: publicUrl });
+      if (profileError) throw profileError;
       toast({
         type: 'success',
         title: 'Success',
@@ -175,12 +367,13 @@ export default function SettingsPage() {
         tabs={tabs}
         fullWidth
         className="w-full"
+        variant="glass"
       />
 
       {/* Profile Tab */}
       {activeTab === 'profile' && (
         <div className="space-y-6 animate-fade-in">
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>Update your personal information</CardDescription>
@@ -231,7 +424,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Account Information</CardTitle>
               <CardDescription>Your account details</CardDescription>
@@ -263,99 +456,135 @@ export default function SettingsPage() {
       {/* Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="space-y-6 animate-fade-in">
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
               <CardDescription>Choose how you want to be notified</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Email Notifications</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Receive notifications via email</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.email_notifications')}
-                      onChange={checked => registerProfile('notification_preferences.email_notifications').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Push Notifications</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Receive push notifications on your devices</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.push_notifications')}
-                      onChange={checked => registerProfile('notification_preferences.push_notifications').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Daily Summary</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Get a daily summary of your activity</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.daily_summary')}
-                      onChange={checked => registerProfile('notification_preferences.daily_summary').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Weekly Report</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Receive a weekly productivity report</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.weekly_report')}
-                      onChange={checked => registerProfile('notification_preferences.weekly_report').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Budget Alerts</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Get notified when approaching budget limits</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.budget_alerts')}
-                      onChange={checked => registerProfile('notification_preferences.budget_alerts').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Task Reminders</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Reminders for upcoming and overdue tasks</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.task_reminders')}
-                      onChange={checked => registerProfile('notification_preferences.task_reminders').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">Routine Reminders</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Reminders for your daily routines</p>
-                    </div>
-                    <Switch
-                      checked={watchProfile('notification_preferences.routine_reminders')}
-                      onChange={checked => registerProfile('notification_preferences.routine_reminders').onChange({ target: { checked } })}
-                      label=""
-                      description=""
-                    />
+              <form onSubmit={handleSubmitProfile(onSubmitProfile)} className="space-y-6">
+                <div className="space-y-4 border-b border-neutral-200/50 dark:border-neutral-800/50 pb-6">
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Email Notifications</h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'email_enabled', label: 'Enable Email Notifications', desc: 'Master toggle for all email notifications' },
+                      { key: 'email_daily_summary', label: 'Daily Summary', desc: 'Get a daily summary of your activity' },
+                      { key: 'email_weekly_report', label: 'Weekly Report', desc: 'Receive a weekly productivity report' },
+                      { key: 'email_budget_alerts', label: 'Budget Alerts', desc: 'Get notified when approaching budget limits' },
+                      { key: 'email_task_reminders', label: 'Task Reminders', desc: 'Reminders for upcoming and overdue tasks' },
+                      { key: 'email_routine_reminders', label: 'Routine Reminders', desc: 'Reminders for your daily routines' },
+                      { key: 'email_habit_reminders', label: 'Habit Reminders', desc: 'Reminders for your habits' },
+                      { key: 'email_goal_deadlines', label: 'Goal Deadlines', desc: 'Notifications for approaching goal deadlines' },
+                      { key: 'email_subscription_renewals', label: 'Subscription Renewals', desc: 'Alerts for upcoming subscription payments' },
+                    ].map(item => {
+                      const notifPrefs = (watchProfile('notification_preferences') || {}) as Record<string, boolean>;
+                      return (
+                        <div key={item.key} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-neutral-900 dark:text-white">{item.label}</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">{item.desc}</p>
+                          </div>
+                          <Switch
+                            checked={notifPrefs[item.key] ?? false}
+                            onChange={e => setValueProfile('notification_preferences', { ...notifPrefs, [item.key]: e.target.checked } as any)}
+                            label=""
+                            description=""
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+
+                <div className="space-y-4 border-b border-neutral-200/50 dark:border-neutral-800/50 pb-6">
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Push Notifications</h3>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'push_enabled', label: 'Enable Push Notifications', desc: 'Master toggle for all push notifications' },
+                      { key: 'push_task_reminders', label: 'Task Reminders', desc: 'Push reminders for upcoming and overdue tasks' },
+                      { key: 'push_routine_reminders', label: 'Routine Reminders', desc: 'Push reminders for your daily routines' },
+                      { key: 'push_habit_reminders', label: 'Habit Reminders', desc: 'Push reminders for your habits' },
+                      { key: 'push_budget_warnings', label: 'Budget Warnings', desc: 'Push alerts when approaching budget limits' },
+                      { key: 'push_subscription_renewals', label: 'Subscription Renewals', desc: 'Push alerts for upcoming subscription payments' },
+                      { key: 'push_goal_deadlines', label: 'Goal Deadlines', desc: 'Push notifications for approaching goal deadlines' },
+                      { key: 'push_pomodoro_reminders', label: 'Pomodoro Reminders', desc: 'Push notifications for Pomodoro sessions' },
+                      { key: 'push_schedule_reminders', label: 'Schedule Reminders', desc: 'Push reminders for scheduled events' },
+                    ].map(item => {
+                      const notifPrefs = (watchProfile('notification_preferences') || {}) as Record<string, boolean>;
+                      return (
+                        <div key={item.key} className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-neutral-900 dark:text-white">{item.label}</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">{item.desc}</p>
+                          </div>
+                          <Switch
+                            checked={notifPrefs[item.key] ?? false}
+                            onChange={e => setValueProfile('notification_preferences', { ...notifPrefs, [item.key]: e.target.checked } as any)}
+                            label=""
+                            description=""
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Timing & Frequency</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Quiet Hours Start</label>
+                        <Input
+                          type="time"
+                          value={(watchProfile('notification_preferences') as any)?.quiet_hours_start || '22:00'}
+                          onChange={e => setValueProfile('notification_preferences', { ...((watchProfile('notification_preferences') as any) || {}), quiet_hours_start: e.target.value } as any)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Quiet Hours End</label>
+                        <Input
+                          type="time"
+                          value={(watchProfile('notification_preferences') as any)?.quiet_hours_end || '08:00'}
+                          onChange={e => setValueProfile('notification_preferences', { ...((watchProfile('notification_preferences') as any) || {}), quiet_hours_end: e.target.value } as any)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Timezone</label>
+                        <Input
+                          value={(watchProfile('notification_preferences') as any)?.timezone || 'UTC'}
+                          onChange={e => setValueProfile('notification_preferences', { ...((watchProfile('notification_preferences') as any) || {}), timezone: e.target.value } as any)}
+                          placeholder="UTC"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Max Daily Notifications</label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="200"
+                          value={(watchProfile('notification_preferences') as any)?.max_daily_notifications || 50}
+                          onChange={e => setValueProfile('notification_preferences', { ...((watchProfile('notification_preferences') as any) || {}), max_daily_notifications: Number(e.target.value) } as any)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-neutral-900 dark:text-white">Batch Similar Notifications</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Group similar notifications together</p>
+                      </div>
+                      <Switch
+                        checked={(watchProfile('notification_preferences') as any)?.batch_similar ?? true}
+                        onChange={checked => setValueProfile('notification_preferences', { ...((watchProfile('notification_preferences') as any) || {}), batch_similar: checked } as any)}
+                        label=""
+                        description=""
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="submit" loading={isSubmittingProfile}>Save Preferences</Button>
                 </div>
@@ -368,33 +597,41 @@ export default function SettingsPage() {
       {/* Appearance Tab */}
       {activeTab === 'appearance' && (
         <div className="space-y-6 animate-fade-in">
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Theme</CardTitle>
               <CardDescription>Choose your preferred color scheme</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
-                {[
+                {([
                   { value: 'light', label: 'Light', icon: Sun, description: 'Always use light mode' },
                   { value: 'dark', label: 'Dark', icon: Moon, description: 'Always use dark mode' },
                   { value: 'system', label: 'System', icon: Monitor, description: 'Match your system setting' },
-                ].map(option => (
+                ] as const).map(option => (
                   <button
                     key={option.value}
-                    onClick={() => registerProfile('theme').onChange({ target: { value: option.value } })}
-                    className={`relative p-4 rounded-xl border-2 transition-all ${
-                      watchProfile('theme') === option.value
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
-                    }`}
+                    onClick={async () => {
+                      setMode(option.value as ThemeMode);
+                      const { error } = await updateProfileHook({ theme: option.value });
+                      if (error) {
+                        toast({ type: 'error', title: 'Error', message: 'Failed to update theme preference' });
+                        setMode(mode);
+                      }
+                    }}
+                    className={cn(
+                      'relative p-4 rounded-xl border-2 transition-all',
+                      mode === option.value
+                        ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-900/20'
+                        : 'border-neutral-200/50 dark:border-neutral-700/50 hover:border-neutral-300/50 dark:hover:border-neutral-600/50'
+                    )}
                   >
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <option.icon className="w-6 h-6" />
                     </div>
                     <p className="text-center font-medium text-neutral-900 dark:text-white">{option.label}</p>
                     <p className="text-center text-xs text-neutral-500 dark:text-neutral-400 mt-1">{option.description}</p>
-                    {watchProfile('theme') === option.value && (
+                    {mode === option.value && (
                       <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center">
                         <Check className="w-3 h-3 text-white" />
                       </div>
@@ -405,7 +642,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Language</CardTitle>
               <CardDescription>Choose your preferred language</CardDescription>
@@ -432,7 +669,7 @@ export default function SettingsPage() {
       {/* Security Tab */}
       {activeTab === 'security' && (
         <div className="space-y-6 animate-fade-in">
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
               <CardDescription>Update your password to keep your account secure</CardDescription>
@@ -470,7 +707,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Two-Factor Authentication</CardTitle>
               <CardDescription>Add an extra layer of security to your account</CardDescription>
@@ -486,14 +723,14 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Active Sessions</CardTitle>
               <CardDescription>Manage your active login sessions</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                <div className="flex items-center justify-between p-3 rounded-xl glass-card">
                   <div className="flex items-center gap-3">
                     <Monitor className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                     <div>
@@ -513,23 +750,63 @@ export default function SettingsPage() {
       {/* Data & Privacy Tab */}
       {activeTab === 'data' && (
         <div className="space-y-6 animate-fade-in">
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Export Your Data</CardTitle>
               <CardDescription>Download a copy of all your data</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-neutral-900 dark:text-white">Export Data</p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Download JSON file with all your data</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl glass-card">
+                  <div>
+                    <p className="font-medium text-neutral-900 dark:text-white">Complete Backup (JSON)</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Download all your data in a single JSON file</p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    icon={<FileJson className="w-4 h-4" />}
+                    onClick={handleExportJSON}
+                    disabled={isExporting}
+                    loading={isExporting}
+                  >
+                    {isExporting ? 'Preparing...' : 'Export JSON'}
+                  </Button>
                 </div>
-                <Button variant="outline" icon={<Download className="w-4 h-4" />}>Export Data</Button>
+                <div className="flex items-center justify-between p-4 rounded-xl glass-card">
+                  <div>
+                    <p className="font-medium text-neutral-900 dark:text-white">Expenses (CSV)</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Download expenses in spreadsheet format</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    icon={<FileSpreadsheet className="w-4 h-4" />}
+                    onClick={handleExportExpensesCSV}
+                    disabled={isExporting}
+                    loading={isExporting}
+                  >
+                    Export CSV
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-xl glass-card">
+                  <div>
+                    <p className="font-medium text-neutral-900 dark:text-white">Tasks (CSV)</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Download tasks in spreadsheet format</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    icon={<FileSpreadsheet className="w-4 h-4" />}
+                    onClick={handleExportTasksCSV}
+                    disabled={isExporting}
+                    loading={isExporting}
+                  >
+                    Export CSV
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Delete Account</CardTitle>
               <CardDescription>Permanently delete your account and all data</CardDescription>
@@ -550,7 +827,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="default" glass={true}>
             <CardHeader>
               <CardTitle>Sign Out Everywhere</CardTitle>
               <CardDescription>Sign out of all active sessions on all devices</CardDescription>

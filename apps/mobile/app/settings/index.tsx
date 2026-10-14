@@ -10,7 +10,7 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { NotificationPreferences } from '@productivity-suite/core';
+import { notificationPreferencesSchema } from '@productivity-suite/core';
 import { useExpenses, useTasks, useRoutines, usePomodoroSessions, useScheduleEvents, useHolidays } from '@productivity-suite/core';
 
 const profileSchema = z.object({
@@ -18,15 +18,7 @@ const profileSchema = z.object({
   currency: z.string().optional(),
   monthly_budget: z.number().positive().optional().nullable(),
   theme: z.enum(['light', 'dark', 'system']).optional(),
-  notification_preferences: z.object({
-    email_notifications: z.boolean(),
-    push_notifications: z.boolean(),
-    daily_summary: z.boolean(),
-    weekly_report: z.boolean(),
-    budget_alerts: z.boolean(),
-    task_reminders: z.boolean(),
-    routine_reminders: z.boolean(),
-  }).optional(),
+  notification_preferences: notificationPreferencesSchema.partial().optional(),
 });
 
 const passwordSchema = z.object({
@@ -81,13 +73,30 @@ export default function SettingsScreen() {
       monthly_budget: profile?.monthly_budget || null,
       theme: profile?.theme || 'system',
       notification_preferences: profile?.notification_preferences || {
-        email_notifications: true,
-        push_notifications: true,
-        daily_summary: true,
-        weekly_report: false,
-        budget_alerts: true,
-        task_reminders: true,
-        routine_reminders: true,
+        in_app_enabled: true,
+        email_enabled: true,
+        email_daily_summary: true,
+        email_weekly_report: false,
+        email_budget_alerts: true,
+        email_task_reminders: true,
+        email_routine_reminders: true,
+        email_habit_reminders: true,
+        email_goal_deadlines: true,
+        email_subscription_renewals: true,
+        push_enabled: true,
+        push_task_reminders: true,
+        push_routine_reminders: true,
+        push_habit_reminders: true,
+        push_budget_warnings: true,
+        push_subscription_renewals: true,
+        push_goal_deadlines: true,
+        push_pomodoro_reminders: true,
+        push_schedule_reminders: true,
+        quiet_hours_start: '22:00',
+        quiet_hours_end: '08:00',
+        timezone: 'UTC',
+        max_daily_notifications: 50,
+        batch_similar: true,
       },
     },
   });
@@ -314,46 +323,136 @@ export default function SettingsScreen() {
                 <Text style={styles.cardSubtitle}>Choose how you want to be notified</Text>
               </View>
               <form onSubmit={handleSubmitProfile(onSubmitProfile)} style={styles.form}>
-                <View style={styles.notificationList}>
-                  {[
-                    { key: 'email_notifications', label: 'Email Notifications', desc: 'Receive notifications via email' },
-                    { key: 'push_notifications', label: 'Push Notifications', desc: 'Receive push notifications on your devices' },
-                    { key: 'daily_summary', label: 'Daily Summary', desc: 'Get a daily summary of your activity' },
-                    { key: 'weekly_report', label: 'Weekly Report', desc: 'Receive a weekly productivity report' },
-                    { key: 'budget_alerts', label: 'Budget Alerts', desc: 'Get notified when approaching budget limits' },
-                    { key: 'task_reminders', label: 'Task Reminders', desc: 'Reminders for upcoming and overdue tasks' },
-                    { key: 'routine_reminders', label: 'Routine Reminders', desc: 'Reminders for your daily routines' },
-                  ].map(item => {
-                    const notifPrefs = watchProfile('notification_preferences') as NotificationPreferences | undefined;
-                    const value = notifPrefs?.[item.key as keyof NotificationPreferences] ?? false;
-                    return (
-                      <View key={item.key} style={styles.notificationItem}>
-                        <View style={styles.notificationInfo}>
-                          <Text style={styles.notificationLabel}>{item.label}</Text>
-                          <Text style={styles.notificationDesc}>{item.desc}</Text>
+                <ScrollView style={styles.notificationList} showsVerticalScrollIndicator={false}>
+                  {/* Email Notifications Section */}
+                  <View style={styles.notificationSection}>
+                    <Text style={styles.notificationSectionTitle}>Email Notifications</Text>
+                    {[
+                      { key: 'email_enabled', label: 'Enable Email Notifications', desc: 'Master toggle for all email notifications' },
+                      { key: 'email_daily_summary', label: 'Daily Summary', desc: 'Get a daily summary of your activity' },
+                      { key: 'email_weekly_report', label: 'Weekly Report', desc: 'Receive a weekly productivity report' },
+                      { key: 'email_budget_alerts', label: 'Budget Alerts', desc: 'Get notified when approaching budget limits' },
+                      { key: 'email_task_reminders', label: 'Task Reminders', desc: 'Reminders for upcoming and overdue tasks' },
+                      { key: 'email_routine_reminders', label: 'Routine Reminders', desc: 'Reminders for your daily routines' },
+                      { key: 'email_habit_reminders', label: 'Habit Reminders', desc: 'Reminders for your habits' },
+                      { key: 'email_goal_deadlines', label: 'Goal Deadlines', desc: 'Notifications for approaching goal deadlines' },
+                      { key: 'email_subscription_renewals', label: 'Subscription Renewals', desc: 'Alerts for upcoming subscription payments' },
+                    ].map(item => {
+                      const notifPrefs = (watchProfile('notification_preferences') || {}) as Record<string, boolean | string | number | undefined>;
+                      return (
+                        <View key={item.key} style={styles.notificationItem}>
+                          <View style={styles.notificationInfo}>
+                            <Text style={styles.notificationLabel}>{item.label}</Text>
+                            <Text style={styles.notificationDesc}>{item.desc}</Text>
+                          </View>
+                          <Switch
+                            value={!!notifPrefs[item.key]}
+                            onValueChange={checked => setValueProfile('notification_preferences', { ...notifPrefs, [item.key]: checked })}
+                            trackColor={{ false: '#d1d5db', true: '#0ea5e9' }}
+                            thumbColor="#ffffff"
+                          />
                         </View>
-                        <Switch
-                          value={value}
-                          onValueChange={checked => {
-                            const defaultPrefs: NotificationPreferences = {
-                              email_notifications: true,
-                              push_notifications: true,
-                              daily_summary: true,
-                              weekly_report: false,
-                              budget_alerts: true,
-                              task_reminders: true,
-                              routine_reminders: true,
-                            };
-                            const currentPrefs = (watchProfile('notification_preferences') as NotificationPreferences | undefined) || defaultPrefs;
-                            setValueProfile('notification_preferences', { ...currentPrefs, [item.key]: checked });
-                          }}
-                          trackColor={{ false: '#d1d5db', true: '#0ea5e9' }}
-                          thumbColor="#ffffff"
-                        />
+                      );
+                    })}
+                  </View>
+
+                  {/* Push Notifications Section */}
+                  <View style={styles.notificationSection}>
+                    <Text style={styles.notificationSectionTitle}>Push Notifications</Text>
+                    {[
+                      { key: 'push_enabled', label: 'Enable Push Notifications', desc: 'Master toggle for all push notifications' },
+                      { key: 'push_task_reminders', label: 'Task Reminders', desc: 'Push reminders for upcoming and overdue tasks' },
+                      { key: 'push_routine_reminders', label: 'Routine Reminders', desc: 'Push reminders for your daily routines' },
+                      { key: 'push_habit_reminders', label: 'Habit Reminders', desc: 'Push reminders for your habits' },
+                      { key: 'push_budget_warnings', label: 'Budget Warnings', desc: 'Push alerts when approaching budget limits' },
+                      { key: 'push_subscription_renewals', label: 'Subscription Renewals', desc: 'Push alerts for upcoming subscription payments' },
+                      { key: 'push_goal_deadlines', label: 'Goal Deadlines', desc: 'Push notifications for approaching goal deadlines' },
+                      { key: 'push_pomodoro_reminders', label: 'Pomodoro Reminders', desc: 'Push notifications for Pomodoro sessions' },
+                      { key: 'push_schedule_reminders', label: 'Schedule Reminders', desc: 'Push reminders for scheduled events' },
+                    ].map(item => {
+                      const notifPrefs = (watchProfile('notification_preferences') || {}) as Record<string, boolean | string | number | undefined>;
+                      return (
+                        <View key={item.key} style={styles.notificationItem}>
+                          <View style={styles.notificationInfo}>
+                            <Text style={styles.notificationLabel}>{item.label}</Text>
+                            <Text style={styles.notificationDesc}>{item.desc}</Text>
+                          </View>
+                          <Switch
+                            value={!!notifPrefs[item.key]}
+                            onValueChange={checked => setValueProfile('notification_preferences', { ...notifPrefs, [item.key]: checked })}
+                            trackColor={{ false: '#d1d5db', true: '#0ea5e9' }}
+                            thumbColor="#ffffff"
+                          />
+                        </View>
+                      );
+                    })}
+                  </View>
+
+                  {/* Timing & Frequency Section */}
+                  <View style={styles.notificationSection}>
+                    <Text style={styles.notificationSectionTitle}>Timing & Frequency</Text>
+                    <View style={styles.notificationItem}>
+                      <View style={styles.notificationInfo}>
+                        <Text style={styles.notificationLabel}>Quiet Hours Start</Text>
+                        <Text style={styles.notificationDesc}>Start of quiet hours (no notifications)</Text>
                       </View>
-                    );
-                  })}
-                </View>
+                      <Input
+                        style={styles.timeInput}
+                        value={watchProfile('notification_preferences')?.quiet_hours_start || '22:00'}
+                        onChangeText={text => setValueProfile('notification_preferences', { ...(watchProfile('notification_preferences') || {}), quiet_hours_start: text })}
+                        placeholder="22:00"
+                      />
+                    </View>
+                    <View style={styles.notificationItem}>
+                      <View style={styles.notificationInfo}>
+                        <Text style={styles.notificationLabel}>Quiet Hours End</Text>
+                        <Text style={styles.notificationDesc}>End of quiet hours</Text>
+                      </View>
+                      <Input
+                        style={styles.timeInput}
+                        value={watchProfile('notification_preferences')?.quiet_hours_end || '08:00'}
+                        onChangeText={text => setValueProfile('notification_preferences', { ...(watchProfile('notification_preferences') || {}), quiet_hours_end: text })}
+                        placeholder="08:00"
+                      />
+                    </View>
+                    <View style={styles.notificationItem}>
+                      <View style={styles.notificationInfo}>
+                        <Text style={styles.notificationLabel}>Timezone</Text>
+                        <Text style={styles.notificationDesc}>Your timezone for scheduling</Text>
+                      </View>
+                      <Input
+                        style={styles.timeInput}
+                        value={watchProfile('notification_preferences')?.timezone || 'UTC'}
+                        onChangeText={text => setValueProfile('notification_preferences', { ...(watchProfile('notification_preferences') || {}), timezone: text })}
+                        placeholder="UTC"
+                      />
+                    </View>
+                    <View style={styles.notificationItem}>
+                      <View style={styles.notificationInfo}>
+                        <Text style={styles.notificationLabel}>Max Daily Notifications</Text>
+                        <Text style={styles.notificationDesc}>Maximum notifications per day</Text>
+                      </View>
+                      <Input
+                        style={styles.timeInput}
+                        value={String(watchProfile('notification_preferences')?.max_daily_notifications || 50)}
+                        onChangeText={text => setValueProfile('notification_preferences', { ...(watchProfile('notification_preferences') || {}), max_daily_notifications: Number(text) })}
+                        placeholder="50"
+                      />
+                    </View>
+                    <View style={styles.notificationItem}>
+                      <View style={styles.notificationInfo}>
+                        <Text style={styles.notificationLabel}>Batch Similar Notifications</Text>
+                        <Text style={styles.notificationDesc}>Group similar notifications together</Text>
+                      </View>
+                      <Switch
+                        value={watchProfile('notification_preferences')?.batch_similar ?? true}
+                        onValueChange={checked => setValueProfile('notification_preferences', { ...(watchProfile('notification_preferences') || {}), batch_similar: checked })}
+                        trackColor={{ false: '#d1d5db', true: '#0ea5e9' }}
+                        thumbColor="#ffffff"
+                      />
+                    </View>
+                  </View>
+                </ScrollView>
                 <View style={styles.modalActions}>
                   <Button style={styles.modalActionButton} loading={isSubmittingProfile || isLoading} onPress={handleSubmitProfile(onSubmitProfile)}>
                     <Text>Save Preferences</Text>
@@ -996,5 +1095,25 @@ const styles = StyleSheet.create({
   },
   modalActionButton: {
     flex: 1,
+  },
+  notificationSection: {
+    marginBottom: 24,
+  },
+  notificationSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a2e',
+    marginBottom: 12,
+  },
+  timeInput: {
+    width: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    backgroundColor: '#fafafa',
+    color: '#1a1a2e',
+    fontSize: 14,
   },
 });

@@ -106,7 +106,7 @@ export default function RoutinesPage() {
       </div>
 
       {/* Today's Routines */}
-      <Card>
+      <Card variant="default" glass={true}>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Today's Routines</CardTitle>
@@ -117,7 +117,7 @@ export default function RoutinesPage() {
           {todayRoutines && todayRoutines.length > 0 ? (
             <div className="space-y-3">
               {todayRoutines.map(routine => (
-                <div key={routine.id} className="flex items-center gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <div key={routine.id} className="flex items-center gap-4 p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow">
                   <Button
                     variant="ghost"
                     size="lg"
@@ -174,46 +174,46 @@ export default function RoutinesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card padding="md">
+        <Card variant="default" glass={true} padding="md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Active Routines</p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats?.active || 0}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary-100/50 dark:bg-primary-900/30 flex items-center justify-center">
               <Target className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             </div>
           </div>
         </Card>
-        <Card padding="md">
+        <Card variant="default" glass={true} padding="md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Completion Rate</p>
               <p className="text-2xl font-bold text-success-600 dark:text-success-400">{stats?.completion_rate?.toFixed(0) || 0}%</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-success-100 dark:bg-success-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-success-100/50 dark:bg-success-900/30 flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-400" />
             </div>
           </div>
         </Card>
-        <Card padding="md">
+        <Card variant="default" glass={true} padding="md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Current Streak</p>
               <p className="text-2xl font-bold text-warning-600 dark:text-warning-400">{stats?.current_streak || 0} 🔥</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-warning-100 dark:bg-warning-900/30 flex items-center justify-center">
-              <RotateCcw className="w-5 h-5 text-warning-600 dark:text-warning-400" />
+            <div className="w-10 h-10 rounded-xl bg-warning-100/50 dark:bg-warning-900/30 flex items-center justify-center">
+              <Target className="w-5 h-5 text-warning-600 dark:text-warning-400" />
             </div>
           </div>
         </Card>
-        <Card padding="md">
+        <Card variant="default" glass={true} padding="md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Longest Streak</p>
               <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats?.longest_streak || 0}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-secondary-100 dark:bg-secondary-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-secondary-100/50 dark:bg-secondary-900/30 flex items-center justify-center">
               <Target className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />
             </div>
           </div>
@@ -221,31 +221,35 @@ export default function RoutinesPage() {
       </div>
 
       {/* All Routines */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Routines</CardTitle>
-          <CardDescription>Manage your recurring routines</CardDescription>
+      <Card variant="default" glass={true}>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>All Routines</CardTitle>
+            <CardDescription>{routines?.length || 0} routines</CardDescription>
+          </div>
+          <Button onClick={() => { setEditingRoutine(null); reset(); setSelectedDays([]); setIsModalOpen(true); }} icon={<Plus className="w-4 h-4" />}>
+            New Routine
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[1,2,3,4].map(i => <div key={i} className="h-20 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded-lg" />)}
+              {[1,2,3].map(i => <div key={i} className="h-20 animate-pulse glass-card" />)}
             </div>
           ) : routines && routines.length > 0 ? (
             <div className="space-y-3">
-              {routines.map(routine => (
-                <div key={routine.id} className="flex items-center gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                  <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                    <Target className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              {routines.map((routine: any) => (
+                <div key={routine.id} className="flex items-center gap-4 p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: routine.color ?? `hsl(${Math.abs(routine.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)) % 360}, 70%, 50%)` }}>
+                    <Target className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={`font-medium ${!routine.is_active ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-white'}`}>
-                        {routine.name}
-                      </p>
-                      <Badge variant={routine.is_active ? 'success' : 'default'} size="sm">
-                        {routine.is_active ? 'Active' : 'Paused'}
-                      </Badge>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-medium text-neutral-900 dark:text-white">{routine.name}</h3>
+                      <Badge variant="outline" size="sm" className="capitalize">{routine.frequency.replace('_', ' ')}</Badge>
+                      {routine.streak_count > 0 && (
+                        <Badge variant="success" size="sm">{routine.streak_count} day streak</Badge>
+                      )}
                     </div>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate mt-1">{routine.description || 'No description'}</p>
                     <div className="flex items-center gap-3 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
@@ -255,47 +259,41 @@ export default function RoutinesPage() {
                           {routine.time_of_day}
                         </span>
                       )}
-                      <Badge variant="outline" size="sm" className="capitalize">
-                        {routine.frequency.replace('_', ' ')}
-                      </Badge>
                       {routine.frequency === 'custom' && routine.days_of_week.length > 0 && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {routine.days_of_week.map(d => daysOfWeek[d]).join(', ')}
+                          {routine.days_of_week.map((d: number) => daysOfWeek[d]).join(', ')}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-success-600 dark:text-success-400">
-                        <RotateCcw className="w-3 h-3" />
-                        {routine.streak_count} day streak
-                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
+                      label={routine.is_active ? 'Disable routine' : 'Enable routine'}
                       checked={routine.is_active}
-                      onChange={(e: { target: { checked: boolean } }) => toggleActive.mutate({ id: routine.id, is_active: e.target.checked })}
-                      label=""
-                      description=""
+                      onChange={e => toggleActive.mutate({ id: routine.id, is_active: e.target.checked })}
+                      aria-label={routine.is_active ? 'Disable routine' : 'Enable routine'}
                     />
-                    <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={() => handleEdit(routine)} />
+                    <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={e => { e.stopPropagation(); handleEdit(routine); }} />
                     <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => { if (confirm('Delete this routine?')) deleteRoutine.mutate(routine.id); }} />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
+            <div className="text-center py-8">
               <Target className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
               <p className="text-neutral-500 dark:text-neutral-400 mb-4">No routines yet</p>
+              <p className="text-sm text-neutral-400 dark:text-neutral-500 mb-4">Create your first routine to start building habits</p>
               <Button onClick={() => { setEditingRoutine(null); reset(); setSelectedDays([]); setIsModalOpen(true); }} icon={<Plus className="w-4 h-4" />}>
-                Create your first routine
+                Create a routine
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Add/Edit Routine Modal */}
+      {/* Create/Edit Routine Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditingRoutine(null); setSelectedDays([]); reset(); }}
@@ -307,38 +305,30 @@ export default function RoutinesPage() {
           <Input label="Description (optional)" placeholder="What does this routine involve?" {...register('description')} />
           <Select
             label="Frequency"
-            options={frequencies}
+            options={frequencies.map(f => ({ value: f.value, label: f.label }))}
             error={errors.frequency?.message}
             {...register('frequency')}
             required
           />
+          <Input label="Time of Day (optional)" type="time" {...register('time_of_day')} placeholder="HH:MM" />
           {frequency === 'custom' && (
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Days of Week</label>
-              <div className="flex gap-2 flex-wrap">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">Days of Week</label>
+              <div className="flex flex-wrap gap-2">
                 {daysOfWeek.map((day, index) => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => handleDayToggle(index)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedDays.includes(index)
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-                    }`}
-                  >
-                    {day}
-                  </button>
+                  <label key={day} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedDays.includes(index)}
+                      onChange={e => handleDayToggle(index)}
+                      className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-2 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">{day}</span>
+                  </label>
                 ))}
               </div>
             </div>
           )}
-          <Input
-            label="Time of Day (optional)"
-            type="time"
-            error={errors.time_of_day?.message}
-            {...register('time_of_day')}
-          />
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => { setIsModalOpen(false); setEditingRoutine(null); setSelectedDays([]); reset(); }}>
               Cancel

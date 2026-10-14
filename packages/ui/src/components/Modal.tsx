@@ -93,7 +93,7 @@ export function Modal({
       aria-describedby={description ? 'modal-description' : undefined}
     >
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 modal-overlay modal-overlay-enter"
         aria-hidden="true"
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
@@ -102,12 +102,13 @@ export function Modal({
           ref={modalRef}
           tabIndex={-1}
           className={cn(
-            'w-full bg-white dark:bg-neutral-900 rounded-xl shadow-xl transform transition-all',
+            'w-full glass-elevated rounded-2xl shadow-glass-elevated modal-enter',
             sizes[size]
           )}
+          style={{ borderColor: 'rgba(148, 163, 184, 0.2)' }}
         >
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
+            <div className="flex items-start justify-between p-6 border-b">
               <div>
                 {title && (
                   <h2 id="modal-title" className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">

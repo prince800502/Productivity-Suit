@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { isWeb, getWindow, getDocument, getLocalStorage } from '../utils';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -12,74 +12,106 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children, defaultMode = 'system' }: { children: ReactNode; defaultMode?: ThemeMode }) {
-  const [mode, setMode] = useState<ThemeMode>(defaultMode);
-  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('light');
-  const [mounted, setMounted] = useState(false);
+// Helper to resolve theme mode to actual light/dark
+function resolveThemeMode(mode: ThemeMode, windowObj: Window | null): 'light' | 'dark' {
+  if (mode === 'system') {
+    return windowObj?.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  return mode;
+}
 
-  useEffect(() => {
-    setMounted(true);
+// Apply theme class to document element
+function applyThemeClass(documentObj: Document | null, resolvedMode: 'light' | 'dark') {
+  if (!documentObj) return;
+  documentObj.documentElement.classList.remove('light', 'dark');
+  documentObj.documentElement.classList.add(resolvedMode);
+}
+
+export function ThemeProvider({ 
+  children, 
+  defaultMode = 'system',
+  onModeChange // Optional callback for syncing with profile/database
+}: { 
+  children: ReactNode; 
+  defaultMode?: ThemeMode;
+  onModeChange?: (mode: ThemeMode) => void;
+}) {
+  // Read initial mode from localStorage synchronously to prevent flash
+  const getInitialMode = (): ThemeMode => {
+    if (!isWeb) return defaultMode;
     const storage = getLocalStorage();
     if (storage) {
       const stored = storage.getItem('theme-mode') as ThemeMode | null;
-      if (stored) {
-        setMode(stored);
-      }
+      if (stored) return stored;
     }
-  }, []);
+    return defaultMode;
+  };
 
+  const [mode, setModeState] = useState<ThemeMode>(getInitialMode);
+  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
+
+  // Apply theme class immediately on mount and when mode changes
   useEffect(() => {
-    if (!mounted || !isWeb) return;
+    if (!isWeb) return;
+    
+    const windowObj = getWindow();
+    const documentObj = getDocument();
+    if (!windowObj || !documentObj) return;
 
-    const window = getWindow();
-    const document = getDocument();
-    if (!window || !document) return;
-
-    let resolved: 'light' | 'dark';
-
-    if (mode === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = mode;
-    }
-
+    const resolved = resolveThemeMode(mode, windowObj);
     setResolvedMode(resolved);
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(resolved);
+    applyThemeClass(documentObj, resolved);
     
     const storage = getLocalStorage();
     if (storage) {
       storage.setItem('theme-mode', mode);
     }
-  }, [mode, mounted]);
+    
+    // Notify parent (e.g., Settings page) to sync with profile
+    if (onModeChange) {
+      onModeChange(mode);
+    }
+  }, [mode, onModeChange]);
 
+  // Listen for system theme changes
   useEffect(() => {
     if (!mounted || !isWeb || mode !== 'system') return;
 
-    const window = getWindow();
-    const document = getDocument();
-    if (!window || !document) return;
+    const windowObj = getWindow();
+    const documentObj = getDocument();
+    if (!windowObj || !documentObj) return;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = windowObj.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       const resolved = e.matches ? 'dark' : 'light';
       setResolvedMode(resolved);
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(resolved);
+      applyThemeClass(documentObj, resolved);
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [mode, mounted]);
 
-  const toggleTheme = () => {
-    setMode(prev => {
+  // Mark as mounted after first render
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const setMode = useCallback((newMode: ThemeMode) => {
+    setModeState(newMode);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setModeState(prev => {
       if (prev === 'light') return 'dark';
       if (prev === 'dark') return 'system';
       return 'light';
     });
-  };
+  }, []);
 
+  // Render children immediately but without theme context until mounted
+  // This prevents flash by letting the CSS handle initial theme
   if (!mounted) {
     return <>{children}</>;
   }
@@ -94,7 +126,13 @@ export function ThemeProvider({ children, defaultMode = 'system' }: { children: 
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // Return default values when not in a provider (e.g., during SSG)
+    return {
+      mode: 'system' as ThemeMode,
+      resolvedMode: 'light' as 'light' | 'dark',
+      setMode: () => {},
+      toggleTheme: () => {},
+    };
   }
   return context;
 }

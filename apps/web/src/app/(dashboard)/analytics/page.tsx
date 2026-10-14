@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek } from 'date-fns';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { Calendar, TrendingUp, Filter, Download } from 'lucide-react';
+import { Calendar, TrendingUp, Filter, Download, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent,
   Button, Select, Badge, Tabs
 } from '@productivity-suite/ui';
 import { useExpenses, useCategoryTotals, useMonthlyBudget, useTasks, useTaskStats, usePomodoroStats, useRoutineStats } from '@productivity-suite/core';
+import { saveAs } from 'file-saver';
 
 const COLORS = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
@@ -57,6 +58,74 @@ export default function AnalyticsPage() {
     { name: 'Long Break', value: pomodoroStats?.by_type?.long_break || 0, color: '#f59e0b' },
   ].filter(d => d.value > 0);
 
+  // Weekly comparison calculations
+  const weeklyComparison = useMemo(() => {
+    const now = new Date();
+    const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    const lastWeekStart = startOfWeek(subDays(now, 7), { weekStartsOn: 1 });
+    const lastWeekEnd = endOfWeek(subDays(now, 7), { weekStartsOn: 1 });
+
+    const thisWeekStartStr = format(thisWeekStart, 'yyyy-MM-dd');
+    const thisWeekEndStr = format(thisWeekEnd, 'yyyy-MM-dd');
+    const lastWeekStartStr = format(lastWeekStart, 'yyyy-MM-dd');
+    const lastWeekEndStr = format(lastWeekEnd, 'yyyy-MM-dd');
+
+    // This week expenses
+    const thisWeekExpenses = expenses?.filter(e => e.date >= thisWeekStartStr && e.date <= thisWeekEndStr) || [];
+    const lastWeekExpenses = expenses?.filter(e => e.date >= lastWeekStartStr && e.date <= lastWeekEndStr) || [];
+
+    const thisWeekExpenseTotal = thisWeekExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const lastWeekExpenseTotal = lastWeekExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    // Calculate percentage change for expenses
+    const expenseChange = lastWeekExpenseTotal > 0 
+      ? ((thisWeekExpenseTotal - lastWeekExpenseTotal) / lastWeekExpenseTotal) * 100
+      : (thisWeekExpenseTotal > 0 ? 100 : 0);
+
+    // For tasks and pomodoro, we need to use the stats which are already computed
+    // Since we don't have weekly breakdown in the current stats, we'll compute from available data
+    // For now, we'll use the total stats and note that weekly breakdown needs backend support
+    // We'll show a placeholder with a note that this is a simplified calculation
+    
+    // This is a simplified calculation - in a real app, you'd query weekly stats from the backend
+    // For now, we'll compute based on the available data
+    const thisWeekTasks = 0; // Would need task completion dates
+    const lastWeekTasks = 0;
+    const taskChange = 0;
+
+    const thisWeekFocus = 0; // Would need pomodoro session dates
+    const lastWeekFocus = 0;
+    const focusChange = 0;
+
+    return {
+      expenseChange,
+      taskChange,
+      focusChange,
+      thisWeekExpenseTotal,
+      lastWeekExpenseTotal,
+    };
+  }, [expenses]);
+
+  const handleExport = () => {
+    if (!expenses || expenses.length === 0) return;
+    
+    const headers = ['Date', 'Category', 'Description', 'Amount'];
+    const rows = expenses.map(e => [
+      e.date,
+      e.category,
+      e.description || '',
+      e.amount.toString()
+    ]);
+    
+    const csvContent = [headers.join(','), ...rows.map(row => 
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    )].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -77,7 +146,7 @@ export default function AnalyticsPage() {
             ]}
             className="w-40"
           />
-          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />}>Export</Button>
+          <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={handleExport}>Export</Button>
         </div>
       </div>
 
@@ -259,21 +328,36 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Weekly Comparison</CardTitle>
-          <CardDescription>This week vs last week</CardDescription>
+          <CardDescription>This week vs last week (Mon-Sun)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-4 rounded-lg bg-success-50 dark:bg-success-900/20">
-              <p className="text-3xl font-bold text-success-600 dark:text-success-400">+12%</p>
+              <p className="text-3xl font-bold text-success-600 dark:text-success-400">
+                {weeklyComparison.expenseChange >= 0 ? '+' : ''}{weeklyComparison.expenseChange.toFixed(1)}%
+              </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Spending</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                This week: ${weeklyComparison.thisWeekExpenseTotal.toFixed(2)} | Last week: ${weeklyComparison.lastWeekExpenseTotal.toFixed(2)}
+              </p>
             </div>
             <div className="text-center p-4 rounded-lg bg-primary-50 dark:bg-primary-900/20">
-              <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">+8%</p>
+              <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">
+                {weeklyComparison.taskChange >= 0 ? '+' : ''}{weeklyComparison.taskChange.toFixed(1)}%
+              </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Tasks Completed</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                Weekly task comparison requires completion date tracking
+              </p>
             </div>
             <div className="text-center p-4 rounded-lg bg-warning-50 dark:bg-warning-900/20">
-              <p className="text-3xl font-bold text-warning-600 dark:text-warning-400">+15%</p>
+              <p className="text-3xl font-bold text-warning-600 dark:text-warning-400">
+                {weeklyComparison.focusChange >= 0 ? '+' : ''}{weeklyComparison.focusChange.toFixed(1)}%
+              </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Focus Time</p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                Weekly focus comparison requires session date tracking
+              </p>
             </div>
           </div>
         </CardContent>

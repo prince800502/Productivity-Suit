@@ -7,10 +7,11 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
+  glass?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, icon, iconPosition = 'left', className, id, ...props }, ref) => {
+  ({ label, error, hint, icon, iconPosition = 'left', glass = true, className, id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
@@ -32,16 +33,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-lg border bg-white dark:bg-neutral-900',
+              'w-full rounded-lg',
               'text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400',
-              'transition-colors duration-200',
+              'transition-all duration-200',
               'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
               'disabled:opacity-50 disabled:cursor-not-allowed',
               icon && iconPosition === 'left' && 'pl-10',
               icon && iconPosition === 'right' && 'pr-10',
               error
                 ? 'border-danger-500 focus:ring-danger-500'
-                : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500',
+                : glass
+                  ? 'glass-interactive'
+                  : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
               className
             )}
             aria-invalid={error ? 'true' : 'false'}
@@ -75,10 +78,11 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   label?: string;
   error?: string;
   hint?: string;
+  glass?: boolean;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, hint, className, id, ...props }, ref) => {
+  ({ label, error, hint, glass = true, className, id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
@@ -94,14 +98,16 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full rounded-lg border bg-white dark:bg-neutral-900',
+            'w-full rounded-lg',
             'text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400',
-            'transition-colors duration-200 resize-y min-h-[80px]',
+            'transition-all duration-200 resize-y min-h-[80px]',
             'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             error
               ? 'border-danger-500 focus:ring-danger-500'
-              : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500',
+              : glass
+                ? 'glass-interactive'
+                : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
             className
           )}
           aria-invalid={error ? 'true' : 'false'}
@@ -131,10 +137,11 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   hint?: string;
   options: { value: string; label: string }[];
   placeholder?: string;
+  glass?: boolean;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, hint, options, placeholder, className, id, ...props }, ref) => {
+  ({ label, error, hint, options, placeholder, glass = true, className, id, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const errorId = `${selectId}-error`;
     const hintId = `${selectId}-hint`;
@@ -150,14 +157,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={cn(
-            'w-full rounded-lg border bg-white dark:bg-neutral-900',
+            'w-full rounded-lg',
             'text-neutral-900 dark:text-neutral-100',
-            'transition-colors duration-200 appearance-none',
+            'transition-all duration-200 appearance-none',
             'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             error
               ? 'border-danger-500 focus:ring-danger-500'
-              : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500',
+              : glass
+                ? 'glass-interactive'
+                : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
             className
           )}
           aria-invalid={error ? 'true' : 'false'}
@@ -209,10 +218,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           type="checkbox"
           id={checkboxId}
           className={cn(
-            'mt-0.5 h-4 w-4 rounded border-neutral-300',
+            'mt-0.5 h-4 w-4 rounded border-neutral-300/50 dark:border-neutral-700/50',
             'text-primary-600 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            'dark:border-neutral-600 dark:bg-neutral-800 dark:checked:bg-primary-600 dark:checked:border-primary-600',
+            'dark:bg-neutral-800 dark:checked:bg-primary-600 dark:checked:border-primary-600',
             className
           )}
           aria-describedby={description ? descId : undefined}
@@ -266,9 +275,9 @@ export function RadioGroup({ label, name, options, value, onChange, error, hint,
               checked={value === option.value}
               onChange={() => onChange(option.value)}
               className={cn(
-                'h-4 w-4 border-neutral-300 text-primary-600',
+                'h-4 w-4 border-neutral-300/50 dark:border-neutral-700/50 text-primary-600',
                 'focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                'dark:border-neutral-600 dark:bg-neutral-800 dark:checked:border-primary-600'
+                'dark:checked:border-primary-600'
               )}
             />
             <div>
@@ -304,7 +313,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           ref={ref as any}
           id={switchId}
           className={cn(
-            'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+            'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200',
             'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             props.checked
@@ -318,7 +327,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
         >
           <span
             className={cn(
-              'inline-block h-4 w-4 transform rounded-full bg-white shadow',
+              'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm',
               'transition-transform duration-200',
               props.checked ? 'translate-x-6' : 'translate-x-1'
             )}

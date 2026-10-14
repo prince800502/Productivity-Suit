@@ -2,17 +2,25 @@ import { HTMLAttributes, forwardRef } from 'react';
 import { cn } from '../utils';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'outlined';
+  variant?: 'default' | 'elevated' | 'outlined' | 'glass' | 'strong' | 'subtle';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
+  glass?: boolean;
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ variant = 'default', padding = 'md', hover = false, className, children, ...props }, ref) => {
+  ({ variant = 'default', padding = 'md', hover = false, glass: isGlass = true, className, children, ...props }, ref) => {
     const variants = {
-      default: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800',
-      elevated: 'bg-white dark:bg-neutral-900 shadow-lg dark:shadow-neutral-900/50',
+      default: isGlass 
+        ? 'glass-card' 
+        : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800',
+      elevated: isGlass
+        ? 'glass-card shadow-glass-elevated'
+        : 'bg-white dark:bg-neutral-900 shadow-xl dark:shadow-neutral-900/50',
       outlined: 'bg-transparent border-2 border-neutral-200 dark:border-neutral-700',
+      glass: 'glass-card',
+      strong: 'glass-strong',
+      subtle: 'glass-subtle',
     };
 
     const paddings = {
@@ -26,10 +34,10 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-xl transition-all duration-200',
+          'rounded-2xl transition-all duration-300',
           variants[variant],
           paddings[padding],
-          hover && 'hover:shadow-md hover:border-neutral-300 dark:hover:border-neutral-700 cursor-pointer',
+          hover && 'hover-lift cursor-pointer',
           className
         )}
         {...props}
@@ -127,11 +135,11 @@ export interface StatCardProps {
 
 export function StatCard({ title, value, change, changeLabel, icon, trend = 'neutral', variant = 'default' }: StatCardProps) {
   const variants = {
-    default: 'bg-white dark:bg-neutral-900',
-    primary: 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800',
-    success: 'bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800',
-    warning: 'bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800',
-    danger: 'bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800',
+    default: 'glass-card',
+    primary: 'glass-card border-primary-200/50 dark:border-primary-800/50',
+    success: 'glass-card border-success-200/50 dark:border-success-800/50',
+    warning: 'glass-card border-warning-200/50 dark:border-warning-800/50',
+    danger: 'glass-card border-danger-200/50 dark:border-danger-800/50',
   };
 
   const trendColors = {
@@ -141,19 +149,19 @@ export function StatCard({ title, value, change, changeLabel, icon, trend = 'neu
   };
 
   const trendIcons = {
-    up: '↑',
-    down: '↓',
+    up: '↗',
+    down: '↘',
     neutral: '→',
   };
 
   return (
-    <Card variant="default" padding="md">
+    <Card variant="default" padding="md" glass={true}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{title}</p>
           <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">{value}</p>
         </div>
-        {icon && <div className="text-neutral-400 dark:text-neutral-500">{icon}</div>}
+        {icon && <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400">{icon}</div>}
       </div>
       {change !== undefined && (
         <div className="mt-3 flex items-center gap-1">

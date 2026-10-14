@@ -169,6 +169,27 @@ export interface Database {
         Insert: Omit<AIWeeklyReport, 'id' | 'created_at'>;
         Update: Partial<Omit<AIWeeklyReport, 'id' | 'created_at'>>;
       };
+      // College Management tables
+      academic_terms: {
+        Row: AcademicTerm;
+        Insert: Omit<AcademicTerm, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AcademicTerm, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      subjects: {
+        Row: Subject;
+        Insert: Omit<Subject, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Subject, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      attendance_records: {
+        Row: AttendanceRecord;
+        Insert: Omit<AttendanceRecord, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AttendanceRecord, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      subject_grades: {
+        Row: SubjectGrade;
+        Insert: Omit<SubjectGrade, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<SubjectGrade, 'id' | 'created_at' | 'updated_at'>>;
+      };
     };
   };
 }
@@ -188,13 +209,35 @@ export interface Profile {
 }
 
 export interface NotificationPreferences {
-  email_notifications: boolean;
-  push_notifications: boolean;
-  daily_summary: boolean;
-  weekly_report: boolean;
-  budget_alerts: boolean;
-  task_reminders: boolean;
-  routine_reminders: boolean;
+  // In-app
+  in_app_enabled?: boolean;
+  // Email
+  email_enabled?: boolean;
+  email_daily_summary?: boolean;
+  email_weekly_report?: boolean;
+  email_budget_alerts?: boolean;
+  email_task_reminders?: boolean;
+  email_routine_reminders?: boolean;
+  email_habit_reminders?: boolean;
+  email_goal_deadlines?: boolean;
+  email_subscription_renewals?: boolean;
+  // Push
+  push_enabled?: boolean;
+  push_task_reminders?: boolean;
+  push_routine_reminders?: boolean;
+  push_habit_reminders?: boolean;
+  push_budget_warnings?: boolean;
+  push_subscription_renewals?: boolean;
+  push_goal_deadlines?: boolean;
+  push_pomodoro_reminders?: boolean;
+  push_schedule_reminders?: boolean;
+  // Timing
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+  timezone?: string;
+  // Frequency
+  max_daily_notifications?: number;
+  batch_similar?: boolean;
 }
 
 // ============================================================
@@ -303,6 +346,7 @@ export interface ScheduleEvent {
   color: string;
   is_recurring: boolean;
   event_type: ScheduleEventType;
+  subject_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -907,6 +951,194 @@ export interface AIContext {
   profile: Profile | null;
 }
 
+// ============================================================
+// COLLEGE MANAGEMENT SYSTEM
+// ============================================================
+
+export interface AcademicTerm {
+  id: string;
+  user_id: string;
+  name: string; // e.g., "Fall 2024"
+  code: string; // e.g., "FA24"
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // YYYY-MM-DD
+  is_current: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
+
+export interface Subject {
+  id: string;
+  user_id: string;
+  academic_term_id: string;
+  name: string; // e.g., "Calculus I"
+  code: string; // e.g., "MATH101"
+  faculty: string | null;
+  credits: number;
+  color: string;
+  icon: string | null;
+  description: string | null;
+  attendance_threshold: number; // Minimum percentage required (default 75)
+  total_classes_scheduled: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubjectWithTerm extends Subject {
+  academic_terms: AcademicTerm;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  user_id: string;
+  subject_id: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  class_session_number: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Attendance summary from database function
+export interface AttendanceSummary {
+  total_classes: number;
+  attended: number;
+  missed: number;
+  excused: number;
+  percentage: number;
+  classes_needed_for_threshold: number;
+  classes_can_miss: number;
+}
+
+export interface SubjectAttendance extends SubjectWithTerm {
+  attendance_summary: AttendanceSummary;
+  recent_records: AttendanceRecord[];
+}
+
+// Academic task types (extended from tasks)
+export type AcademicTaskType = 'assignment' | 'exam' | 'quiz' | 'project' | 'homework' | 'other';
+
+export interface AcademicTask extends Task {
+  subject_id: string | null;
+  academic_type: AcademicTaskType | null;
+  weight: number | null; // Percentage weight for grade calculation
+  score_obtained: number | null;
+  max_score: number | null;
+  submission_date: string | null;
+  is_graded: boolean;
+  subject?: SubjectWithTerm | null;
+}
+
+export interface SubjectGrade {
+  id: string;
+  user_id: string;
+  subject_id: string;
+  task_id: string;
+  weight: number;
+  score_obtained: number | null;
+  max_score: number;
+  percentage: number;
+  letter_grade: string | null;
+  graded_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubjectWithGrades extends Subject {
+  grades: SubjectGrade[];
+  overall_percentage: number | null;
+  overall_letter_grade: string | null;
+}
+
+// Timetable entry (extends schedule_events with subject_id)
+export interface TimetableEntry extends ScheduleEvent {
+  subject_id: string | null;
+  subject?: Subject;
+  academic_term_id: string | null;
+}
+
+// College dashboard data
+export interface CollegeDashboardData {
+  current_term: AcademicTerm | null;
+  subjects: SubjectWithTerm[];
+  today_classes: TimetableEntry[];
+  upcoming_assignments: AcademicTask[];
+  upcoming_exams: AcademicTask[];
+  attendance_alerts: SubjectAttendance[];
+  attendance_summary: {
+    total_subjects: number;
+    subjects_below_threshold: number;
+    overall_attendance: number;
+  };
+}
+
+// Grade letter calculation
+export function calculateLetterGrade(percentage: number): string {
+  if (percentage >= 97) return 'A+';
+  if (percentage >= 93) return 'A';
+  if (percentage >= 90) return 'A-';
+  if (percentage >= 87) return 'B+';
+  if (percentage >= 83) return 'B';
+  if (percentage >= 80) return 'B-';
+  if (percentage >= 77) return 'C+';
+  if (percentage >= 73) return 'C';
+  if (percentage >= 70) return 'C-';
+  if (percentage >= 67) return 'D+';
+  if (percentage >= 63) return 'D';
+  if (percentage >= 60) return 'D-';
+  return 'F';
+}
+
+// Get attendance status color
+export function getAttendanceStatusColor(status: AttendanceStatus): string {
+  switch (status) {
+    case 'present': return 'text-success-600 bg-success-100 dark:bg-success-900/30 dark:text-success-400';
+    case 'absent': return 'text-danger-600 bg-danger-100 dark:bg-danger-900/30 dark:text-danger-400';
+    case 'late': return 'text-warning-600 bg-warning-100 dark:bg-warning-900/30 dark:text-warning-400';
+    case 'excused': return 'text-primary-600 bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400';
+    default: return 'text-neutral-600 bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400';
+  }
+}
+
+// Get attendance status label
+export function getAttendanceStatusLabel(status: AttendanceStatus): string {
+  switch (status) {
+    case 'present': return 'Present';
+    case 'absent': return 'Absent';
+    case 'late': return 'Late';
+    case 'excused': return 'Excused';
+    default: return 'Unknown';
+  }
+}
+
+// Get academic task type color
+export function getAcademicTaskTypeColor(type: AcademicTaskType): string {
+  switch (type) {
+    case 'exam': return 'text-danger-600 bg-danger-100 dark:bg-danger-900/30 dark:text-danger-400';
+    case 'quiz': return 'text-warning-600 bg-warning-100 dark:bg-warning-900/30 dark:text-warning-400';
+    case 'assignment': return 'text-primary-600 bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400';
+    case 'project': return 'text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400';
+    case 'homework': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
+    default: return 'text-neutral-600 bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-400';
+  }
+}
+
+// Get academic task type label
+export function getAcademicTaskTypeLabel(type: AcademicTaskType): string {
+  switch (type) {
+    case 'exam': return 'Exam';
+    case 'quiz': return 'Quiz';
+    case 'assignment': return 'Assignment';
+    case 'project': return 'Project';
+    case 'homework': return 'Homework';
+    default: return 'Other';
+  }
+}
+
 // Natural language command parsing
 export interface ParsedCommand {
   intent: string;
@@ -990,6 +1222,359 @@ export interface AnalyticsFilters {
   period: 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
   start_date?: string;
   end_date?: string;
+}
+
+// ============================================================
+// ATTENDANCE PLANNER
+// ============================================================
+
+export interface AttendancePlannerConfig {
+  target_percentage: number;
+  average_classes_per_day: number;
+  total_classes: number;
+  attended_classes: number;
+  use_timetable: boolean;
+  start_date: string | null;
+}
+
+export interface QuickCheckResult {
+  leave_days: number;
+  average_classes_per_day: number;
+  estimated_classes_missed: number;
+  new_total_classes: number;
+  projected_attendance: number;
+  percentage_point_decrease: number;
+  current_attendance: number;
+}
+
+export interface ClassSkipResult {
+  skip_classes: number;
+  new_total_classes: number;
+  projected_attendance: number;
+  percentage_point_decrease: number;
+  current_attendance: number;
+}
+
+export interface TargetReachResult {
+  target_percentage: number;
+  current_percentage: number;
+  classes_needed: number;
+  days_needed: number | null;
+  is_target_achieved: boolean;
+  is_impossible: boolean;
+  message: string;
+}
+
+export interface ExactDayPlanItem {
+  date: string;
+  day_name: string;
+  type: 'attendance' | 'leave';
+  classes_count: number;
+  cumulative_total_classes: number;
+  cumulative_attended_classes: number;
+  projected_attendance: number;
+  is_holiday: boolean;
+  is_weekend: boolean;
+}
+
+export interface ExactDayPlanResult {
+  items: ExactDayPlanItem[];
+  final_attendance: number;
+  total_days: number;
+  total_leave_days: number;
+  total_attendance_days: number;
+}
+
+export interface HolidayPreviewRow {
+  leave_days: number;
+  estimated_classes_missed: number;
+  projected_total_classes: number;
+  projected_attendance: number;
+  percentage_change: number;
+  status: 'safe' | 'warning' | 'danger';
+  meets_target: boolean;
+}
+
+// ============================================================
+// ATTENDANCE PLANNER CALCULATION ENGINE
+// ============================================================
+
+/**
+ * Calculate current attendance percentage
+ */
+export function calculateCurrentAttendance(attended: number, total: number): number {
+  if (total <= 0) return 100;
+  return Math.round((attended / total) * 100 * 100) / 100; // Round to 2 decimal places
+}
+
+/**
+ * Quick Check: If I take leave
+ */
+export function calculateQuickCheck(input: {
+  leave_days: number;
+  average_classes_per_day: number;
+  current_total_classes: number;
+  current_attended_classes: number;
+}): QuickCheckResult {
+  const { leave_days, average_classes_per_day, current_total_classes, current_attended_classes } = input;
+  
+  const current_attendance = calculateCurrentAttendance(current_attended_classes, current_total_classes);
+  const estimated_classes_missed = leave_days * average_classes_per_day;
+  const new_total_classes = current_total_classes + estimated_classes_missed;
+  const projected_attendance = calculateCurrentAttendance(current_attended_classes, new_total_classes);
+  const percentage_point_decrease = Math.round((current_attendance - projected_attendance) * 100) / 100;
+  
+  return {
+    leave_days,
+    average_classes_per_day,
+    estimated_classes_missed: Math.round(estimated_classes_missed * 100) / 100,
+    new_total_classes,
+    projected_attendance,
+    percentage_point_decrease,
+    current_attendance,
+  };
+}
+
+/**
+ * Class-by-Class: If I skip classes
+ */
+export function calculateClassSkip(input: {
+  skip_classes: number;
+  current_total_classes: number;
+  current_attended_classes: number;
+}): ClassSkipResult {
+  const { skip_classes, current_total_classes, current_attended_classes } = input;
+  
+  const current_attendance = calculateCurrentAttendance(current_attended_classes, current_total_classes);
+  const new_total_classes = current_total_classes + skip_classes;
+  const projected_attendance = calculateCurrentAttendance(current_attended_classes, new_total_classes);
+  const percentage_point_decrease = Math.round((current_attendance - projected_attendance) * 100) / 100;
+  
+  return {
+    skip_classes,
+    new_total_classes,
+    projected_attendance,
+    percentage_point_decrease,
+    current_attendance,
+  };
+}
+
+/**
+ * Goal: Reach a target attendance percentage
+ */
+export function calculateTargetReach(input: {
+  target_percentage: number;
+  current_total_classes: number;
+  current_attended_classes: number;
+  average_classes_per_day?: number;
+}): TargetReachResult {
+  const { target_percentage, current_total_classes, current_attended_classes, average_classes_per_day } = input;
+  
+  const current_percentage = calculateCurrentAttendance(current_attended_classes, current_total_classes);
+  
+  // If already at or above target
+  if (current_percentage >= target_percentage) {
+    return {
+      target_percentage,
+      current_percentage,
+      classes_needed: 0,
+      days_needed: average_classes_per_day ? 0 : null,
+      is_target_achieved: true,
+      is_impossible: false,
+      message: `Target already achieved! Current attendance: ${current_percentage.toFixed(2)}%`,
+    };
+  }
+  
+  // If target is 100% and there are any missed classes, it's impossible
+  if (target_percentage >= 100 && current_attended_classes < current_total_classes) {
+    return {
+      target_percentage,
+      current_percentage,
+      classes_needed: -1,
+      days_needed: null,
+      is_target_achieved: false,
+      is_impossible: true,
+      message: 'Cannot reach 100% attendance with existing absences. You would need to attend infinite classes.',
+    };
+  }
+  
+  // Calculate minimum n such that (A + n) / (T + n) >= target/100
+  // n >= (target * T / 100 - A) / (1 - target / 100)
+  const target_ratio = target_percentage / 100;
+  const numerator = target_ratio * current_total_classes - current_attended_classes;
+  const denominator = 1 - target_ratio;
+  
+  if (denominator <= 0) {
+    return {
+      target_percentage,
+      current_percentage,
+      classes_needed: -1,
+      days_needed: null,
+      is_target_achieved: false,
+      is_impossible: true,
+      message: 'Target percentage is not achievable with current parameters.',
+    };
+  }
+  
+  const classes_needed = Math.ceil(numerator / denominator);
+  const final_classes_needed = Math.max(0, classes_needed);
+  
+  let days_needed: number | null = null;
+  if (average_classes_per_day && average_classes_per_day > 0) {
+    days_needed = Math.ceil(final_classes_needed / average_classes_per_day);
+  }
+  
+  return {
+    target_percentage,
+    current_percentage,
+    classes_needed: final_classes_needed,
+    days_needed,
+    is_target_achieved: false,
+    is_impossible: false,
+    message: `Need to attend ${final_classes_needed} consecutive classes to reach ${target_percentage}%`,
+  };
+}
+
+/**
+ * Exact Day Planner
+ */
+export function calculateExactDayPlan(input: {
+  start_date: string;
+  planned_days: { date: string; type: 'attendance' | 'leave'; classes_count?: number }[];
+  current_total_classes: number;
+  current_attended_classes: number;
+  average_classes_per_day?: number;
+  holidays?: { date: string; is_recurring?: boolean }[];
+}): ExactDayPlanResult {
+  const { start_date, planned_days, current_total_classes, current_attended_classes, average_classes_per_day = 6, holidays = [] } = input;
+  
+  // Create a map of holidays for quick lookup
+  const holidayMap = new Map<string, boolean>();
+  holidays.forEach(h => {
+    holidayMap.set(h.date, true);
+    // If recurring, add yearly occurrences (simplified - just check month/day)
+    if (h.is_recurring) {
+      const [, month, day] = h.date.split('-');
+      // Could expand for recurring holidays, but for now just use exact date
+    }
+  });
+  
+  const items: ExactDayPlanItem[] = [];
+  let cumulative_total = current_total_classes;
+  let cumulative_attended = current_attended_classes;
+  let total_leave_days = 0;
+  let total_attendance_days = 0;
+  
+  // Sort planned days by date
+  const sortedDays = [...planned_days].sort((a, b) => a.date.localeCompare(b.date));
+  
+  sortedDays.forEach(day => {
+    const date = new Date(day.date);
+    const day_name = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const is_weekend = date.getDay() === 0 || date.getDay() === 6;
+    const is_holiday = holidayMap.has(day.date) || is_weekend;
+    
+    let classes_count = day.classes_count;
+    if (!classes_count) {
+      // Use average if not specified
+      classes_count = Math.round(average_classes_per_day);
+    }
+    
+    let item: ExactDayPlanItem;
+    
+    if (day.type === 'attendance') {
+      cumulative_total += classes_count;
+      cumulative_attended += classes_count;
+      total_attendance_days++;
+      item = {
+        date: day.date,
+        day_name,
+        type: 'attendance',
+        classes_count,
+        cumulative_total_classes: cumulative_total,
+        cumulative_attended_classes: cumulative_attended,
+        projected_attendance: calculateCurrentAttendance(cumulative_attended, cumulative_total),
+        is_holiday,
+        is_weekend,
+      };
+    } else {
+      // Leave day
+      cumulative_total += classes_count;
+      // attended stays the same
+      total_leave_days++;
+      item = {
+        date: day.date,
+        day_name,
+        type: 'leave',
+        classes_count,
+        cumulative_total_classes: cumulative_total,
+        cumulative_attended_classes: cumulative_attended,
+        projected_attendance: calculateCurrentAttendance(cumulative_attended, cumulative_total),
+        is_holiday,
+        is_weekend,
+      };
+    }
+    
+    items.push(item);
+  });
+  
+  const final_attendance = items.length > 0 
+    ? items[items.length - 1].projected_attendance 
+    : calculateCurrentAttendance(current_attended_classes, current_total_classes);
+  
+  return {
+    items,
+    final_attendance,
+    total_days: items.length,
+    total_leave_days,
+    total_attendance_days,
+  };
+}
+
+/**
+ * Holiday Impact / Preview Table
+ */
+export function calculateHolidayPreview(input: {
+  leave_scenarios: number[];
+  current_total_classes: number;
+  current_attended_classes: number;
+  average_classes_per_day: number;
+  target_percentage: number;
+}): HolidayPreviewRow[] {
+  const { leave_scenarios, current_total_classes, current_attended_classes, average_classes_per_day, target_percentage } = input;
+  
+  const current_attendance = calculateCurrentAttendance(current_attended_classes, current_total_classes);
+  
+  return leave_scenarios.map(leave_days => {
+    const result = calculateQuickCheck({
+      leave_days,
+      average_classes_per_day,
+      current_total_classes,
+      current_attended_classes,
+    });
+    
+    const percentage_change = result.projected_attendance - current_attendance;
+    const meets_target = result.projected_attendance >= target_percentage;
+    
+    let status: 'safe' | 'warning' | 'danger';
+    if (meets_target) {
+      status = 'safe';
+    } else if (result.projected_attendance >= target_percentage - 5) {
+      status = 'warning';
+    } else {
+      status = 'danger';
+    }
+    
+    return {
+      leave_days,
+      estimated_classes_missed: result.estimated_classes_missed,
+      projected_total_classes: result.new_total_classes,
+      projected_attendance: result.projected_attendance,
+      percentage_change: Math.round(percentage_change * 100) / 100,
+      status,
+      meets_target,
+    };
+  });
 }
 
 // ============================================================
@@ -1302,6 +1887,86 @@ export const aiCommandSchema = z.object({
   })).default([]),
 });
 
+// College Management schemas
+export const academicTermSchema = z.object({
+  name: z.string().min(1).max(100),
+  code: z.string().min(1).max(20),
+  start_date: z.string().date(),
+  end_date: z.string().date(),
+  is_current: z.boolean().default(false),
+});
+
+export const subjectSchema = z.object({
+  academic_term_id: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  code: z.string().min(1).max(20),
+  faculty: z.string().max(100).optional().nullable(),
+  credits: z.number().int().positive().default(3),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default('#3b82f6'),
+  icon: z.string().optional(),
+  description: z.string().max(500).optional(),
+  attendance_threshold: z.number().int().min(0).max(100).default(75),
+});
+
+export const attendanceRecordSchema = z.object({
+  subject_id: z.string().uuid(),
+  date: z.string().date(),
+  status: z.enum(['present', 'absent', 'late', 'excused']).default('present'),
+  class_session_number: z.number().int().positive().optional().nullable(),
+  notes: z.string().max(500).optional(),
+});
+
+export const academicTaskSchema = z.object({
+  subject_id: z.string().uuid().optional().nullable(),
+  academic_type: z.enum(['assignment', 'exam', 'quiz', 'project', 'homework', 'other']).optional().nullable(),
+  weight: z.number().min(0).max(100).optional().nullable(),
+  score_obtained: z.number().min(0).optional().nullable(),
+  max_score: z.number().positive().optional().nullable(),
+  submission_date: z.string().datetime().optional().nullable(),
+});
+
+// Attendance Planner schemas
+export const attendancePlannerConfigSchema = z.object({
+  target_percentage: z.number().min(1).max(100).default(75),
+  average_classes_per_day: z.number().positive().default(6),
+  total_classes: z.number().int().nonnegative().default(0),
+  attended_classes: z.number().int().nonnegative().default(0),
+  use_timetable: z.boolean().default(false),
+  start_date: z.string().date().optional().nullable(),
+});
+
+export const quickCheckSchema = z.object({
+  leave_days: z.number().int().nonnegative(),
+  average_classes_per_day: z.number().positive(),
+  current_total_classes: z.number().int().nonnegative(),
+  current_attended_classes: z.number().int().nonnegative(),
+});
+
+export const classSkipSchema = z.object({
+  skip_classes: z.number().int().nonnegative(),
+  current_total_classes: z.number().int().nonnegative(),
+  current_attended_classes: z.number().int().nonnegative(),
+});
+
+export const targetReachSchema = z.object({
+  target_percentage: z.number().min(1).max(100),
+  current_total_classes: z.number().int().nonnegative(),
+  current_attended_classes: z.number().int().nonnegative(),
+  average_classes_per_day: z.number().positive().optional(),
+});
+
+export const exactDayPlanSchema = z.object({
+  start_date: z.string().date(),
+  planned_days: z.array(z.object({
+    date: z.string().date(),
+    type: z.enum(['attendance', 'leave']),
+    classes_count: z.number().int().positive().optional(),
+  })),
+  current_total_classes: z.number().int().nonnegative(),
+  current_attended_classes: z.number().int().nonnegative(),
+  average_classes_per_day: z.number().positive().optional(),
+});
+
 // Type inference
 export type ExpenseForm = z.infer<typeof expenseSchema>;
 export type TaskForm = z.infer<typeof taskSchema>;
@@ -1328,3 +1993,14 @@ export type AIProviderForm = z.infer<typeof aiProviderSchema>;
 export type AIConversationForm = z.infer<typeof aiConversationSchema>;
 export type AIMessageForm = z.infer<typeof aiMessageSchema>;
 export type AICommandForm = z.infer<typeof aiCommandSchema>;
+export type AcademicTermForm = z.infer<typeof academicTermSchema>;
+export type SubjectForm = z.infer<typeof subjectSchema>;
+export type AttendanceRecordForm = z.infer<typeof attendanceRecordSchema>;
+export type AcademicTaskForm = z.infer<typeof academicTaskSchema>;
+
+// Attendance Planner types
+export type AttendancePlannerConfigForm = z.infer<typeof attendancePlannerConfigSchema>;
+export type QuickCheckForm = z.infer<typeof quickCheckSchema>;
+export type ClassSkipForm = z.infer<typeof classSkipSchema>;
+export type TargetReachForm = z.infer<typeof targetReachSchema>;
+export type ExactDayPlanForm = z.infer<typeof exactDayPlanSchema>;

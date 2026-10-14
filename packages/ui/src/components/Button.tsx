@@ -3,7 +3,7 @@ import { cn } from '../utils';
 import { Slot } from '@radix-ui/react-slot';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: ReactNode;
@@ -40,10 +40,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: `
         bg-primary-600 text-white hover:bg-primary-700
         focus:ring-primary-500 dark:bg-primary-500 dark:hover:bg-primary-600
+        shadow-md hover:shadow-lg
       `,
       secondary: `
         bg-secondary-600 text-white hover:bg-secondary-700
         focus:ring-secondary-500 dark:bg-secondary-500 dark:hover:bg-secondary-600
+        shadow-md hover:shadow-lg
+      `,
+      tertiary: `
+        bg-tertiary-500 text-white hover:bg-tertiary-600
+        focus:ring-tertiary-500 dark:bg-tertiary-500 dark:hover:bg-tertiary-600
+        shadow-md hover:shadow-lg
       `,
       outline: `
         border-2 border-neutral-300 bg-transparent text-neutral-700 hover:bg-neutral-50
@@ -56,6 +63,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       danger: `
         bg-danger-600 text-white hover:bg-danger-700
         focus:ring-danger-500 dark:bg-danger-500 dark:hover:bg-danger-600
+        shadow-md hover:shadow-lg
+      `,
+      glass: `
+        glass-interactive text-neutral-900 dark:text-neutral-100
+        hover:bg-white/90 dark:hover:bg-neutral-950/80
+        focus:ring-primary-500
       `,
     };
 
@@ -124,7 +137,7 @@ Button.displayName = 'Button';
 
 // Icon button variant
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   'aria-label': string;
 }

@@ -38,13 +38,21 @@ export async function middleware(req: NextRequest) {
   if (isProtectedPath && !session) {
     const redirectUrl = new URL('/login', req.url);
     redirectUrl.searchParams.set('redirect', req.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    // Prevent caching of the redirect response
+    redirectResponse.headers.set('Cache-Control', 'no-store, must-revalidate, private');
+    return redirectResponse;
   }
 
   // Redirect authenticated users from auth routes
   if (isAuthPath && session) {
     const redirect = req.nextUrl.searchParams.get('redirect') || '/dashboard';
     return NextResponse.redirect(new URL(redirect, req.url));
+  }
+
+  // Add cache-control headers for protected routes to prevent bfcache restoring stale authenticated content
+  if (isProtectedPath) {
+    res.headers.set('Cache-Control', 'no-store, must-revalidate, private');
   }
 
   return res;

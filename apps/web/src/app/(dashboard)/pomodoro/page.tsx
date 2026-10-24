@@ -10,6 +10,7 @@ import {
 import { usePomodoroSessions, useCreatePomodoro, useCompletePomodoro, usePausePomodoro, useResumePomodoro, useCancelPomodoro, usePomodoroStats, useActivePomodoro } from '@productivity-suite/core';
 import { POMODORO_PRESETS, usePomodoroTimer } from '@productivity-suite/core';
 import { cn } from '@productivity-suite/ui';
+import { useToast } from '@productivity-suite/ui';
 
 const timerPresets = [
   { key: 'focus', label: 'Focus', icon: Brain, color: 'primary', defaultMinutes: 25 },
@@ -34,6 +35,7 @@ export default function PomodoroPage() {
   const pausePomodoro = usePausePomodoro();
   const resumePomodoro = useResumePomodoro();
   const cancelPomodoro = useCancelPomodoro();
+  const { toast } = useToast();
 
   const timer = usePomodoroTimer(customMinutes[activePreset] || POMODORO_PRESETS[activePreset]);
 
@@ -48,25 +50,52 @@ export default function PomodoroPage() {
     }
   }, [activeSession, activePreset, timer]);
 
+  // Handle timer completion
+  useEffect(() => {
+    if (activeSession && activeSession.status === 'running' && timer.timeLeft === 0 && timer.completedMinutes > 0) {
+      completePomodoro.mutateAsync({
+        id: activeSession.id,
+        completedMinutes: timer.completedMinutes,
+      });
+      timer.reset(customMinutes[activePreset] || POMODORO_PRESETS[activePreset]);
+    }
+  }, [timer.timeLeft, activeSession, timer.completedMinutes, activePreset, timer]);
+
   const handleStart = async () => {
     if (activeSession) {
-      if (activeSession.status === 'paused') {
-        await resumePomodoro.mutateAsync(activeSession.id);
-      } else {
-        await pausePomodoro.mutateAsync(activeSession.id);
+      try {
+        if (activeSession.status === 'paused') {
+          await resumePomodoro.mutateAsync(activeSession.id);
+          toast({ type: 'success', title: 'Session resumed' });
+        } else {
+          await pausePomodoro.mutateAsync(activeSession.id);
+          toast({ type: 'success', title: 'Session paused' });
+        }
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to update session' });
       }
     } else {
-      await createPomodoro.mutateAsync({
-        type: activePreset,
-        duration_minutes: customMinutes[activePreset] || POMODORO_PRESETS[activePreset],
-      });
-      timer.start();
+      try {
+        await createPomodoro.mutateAsync({
+          type: activePreset,
+          duration_minutes: customMinutes[activePreset] || POMODORO_PRESETS[activePreset],
+        });
+        toast({ type: 'success', title: 'Session started' });
+        timer.start();
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to create session' });
+      }
     }
   };
 
   const handlePause = async () => {
     if (activeSession) {
-      await pausePomodoro.mutateAsync(activeSession.id);
+      try {
+        await pausePomodoro.mutateAsync(activeSession.id);
+        toast({ type: 'success', title: 'Session paused' });
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to pause session' });
+      }
     }
     timer.pause();
   };
@@ -75,19 +104,14 @@ export default function PomodoroPage() {
     timer.reset(customMinutes[activePreset] || POMODORO_PRESETS[activePreset]);
   };
 
-  const handleComplete = async () => {
-    if (activeSession) {
-      await completePomodoro.mutateAsync({
-        id: activeSession.id,
-        completedMinutes: timer.completedMinutes,
-      });
-    }
-    timer.reset(customMinutes[activePreset] || POMODORO_PRESETS[activePreset]);
-  };
-
   const handleSkip = async () => {
     if (activeSession) {
-      await cancelPomodoro.mutateAsync(activeSession.id);
+      try {
+        await cancelPomodoro.mutateAsync(activeSession.id);
+        toast({ type: 'success', title: 'Session cancelled' });
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to cancel session' });
+      }
     }
     timer.skip();
   };

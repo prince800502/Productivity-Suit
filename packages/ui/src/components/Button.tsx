@@ -3,7 +3,7 @@ import { cn } from '../utils';
 import { Slot } from '@radix-ui/react-slot';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'glass';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'glass' | 'premium';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: ReactNode;
@@ -38,27 +38,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-primary-600 text-white hover:bg-primary-700
-        focus:ring-primary-500 dark:bg-primary-500 dark:hover:bg-primary-600
+        bg-champagne-600 text-obsidian-950 hover:bg-champagne-700
+        focus:ring-champagne-500 dark:bg-champagne-600 dark:hover:bg-champagne-700 dark:text-obsidian-950
         shadow-md hover:shadow-lg
       `,
       secondary: `
-        bg-secondary-600 text-white hover:bg-secondary-700
-        focus:ring-secondary-500 dark:bg-secondary-500 dark:hover:bg-secondary-600
-        shadow-md hover:shadow-lg
-      `,
-      tertiary: `
-        bg-tertiary-500 text-white hover:bg-tertiary-600
-        focus:ring-tertiary-500 dark:bg-tertiary-500 dark:hover:bg-tertiary-600
-        shadow-md hover:shadow-lg
+        bg-obsidian-800 text-neutral-100 hover:bg-obsidian-700
+        focus:ring-obsidian-500 dark:bg-obsidian-700 dark:hover:bg-obsidian-600
+        border border-obsidian-600
       `,
       outline: `
-        border-2 border-neutral-300 bg-transparent text-neutral-700 hover:bg-neutral-50
-        focus:ring-neutral-400 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800
+        border-2 border-obsidian-600 bg-transparent text-champagne-600 hover:bg-champagne-500/10
+        focus:ring-champagne-500 dark:border-champagne-500 dark:text-champagne-400 dark:hover:bg-champagne-500/20
       `,
       ghost: `
-        bg-transparent text-neutral-700 hover:bg-neutral-100
-        focus:ring-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-800
+        bg-transparent text-champagne-600 hover:bg-champagne-500/10
+        focus:ring-champagne-500 dark:text-champagne-400 dark:hover:bg-champagne-500/10
       `,
       danger: `
         bg-danger-600 text-white hover:bg-danger-700
@@ -68,7 +63,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       glass: `
         glass-interactive text-neutral-900 dark:text-neutral-100
         hover:bg-white/90 dark:hover:bg-neutral-950/80
-        focus:ring-primary-500
+        focus:ring-champagne-500
+      `,
+      premium: `
+        bg-champagne-600 text-obsidian-950 hover:bg-champagne-700
+        focus:ring-champagne-500 dark:bg-champagne-600 dark:hover:bg-champagne-700 dark:text-obsidian-950
+        shadow-md hover:shadow-lg
       `,
     };
 
@@ -137,7 +137,7 @@ Button.displayName = 'Button';
 
 // Icon button variant
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'outline' | 'ghost' | 'danger' | 'glass';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'glass';
   size?: 'sm' | 'md' | 'lg';
   'aria-label': string;
 }

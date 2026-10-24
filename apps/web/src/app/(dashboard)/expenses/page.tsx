@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Filter, Download, Search, ChevronDown, Filter as FilterIcon, X } from 'lucide-react';
+import { Plus, Filter, Download, Search, ChevronDown, Filter as FilterIcon, X, Trash2 } from 'lucide-react';
+import { cn } from '@productivity-suite/ui';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
   Button, Input, Select, Badge, Avatar, Dropdown, Modal, Tabs, Progress
@@ -14,6 +15,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { categoryColors, formatCurrency, CategoryIcon } from '@productivity-suite/ui';
 import { saveAs } from 'file-saver';
+import { useToast } from '@productivity-suite/ui';
 
 const categories: { value: ExpenseCategory; label: string }[] = [
   { value: 'food', label: 'Food & Dining' },
@@ -65,6 +67,8 @@ export default function ExpensesPage() {
     },
   });
 
+  const { toast } = useToast();
+
   const onSubmit = async (data: ExpenseForm) => {
     try {
       if (editingExpense) {
@@ -76,8 +80,10 @@ export default function ExpensesPage() {
       setEditingExpense(null);
       reset();
       refetch();
-    } catch (error) {
+      toast({ type: 'success', title: editingExpense ? 'Expense updated' : 'Expense added' });
+    } catch (error: any) {
       console.error('Failed to save expense:', error);
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to save expense' });
     }
   };
 
@@ -103,8 +109,10 @@ export default function ExpensesPage() {
       try {
         await deleteExpense.mutateAsync(deleteConfirm);
         refetch();
-      } catch (error) {
+        toast({ type: 'success', title: 'Expense deleted' });
+      } catch (error: any) {
         console.error('Failed to delete expense:', error);
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to delete expense' });
       }
       setDeleteConfirm(null);
     }
@@ -117,7 +125,10 @@ export default function ExpensesPage() {
 
   // Export expenses to CSV
   const handleExport = () => {
-    if (!expenses || expenses.length === 0) return;
+    if (!expenses || expenses.length === 0) {
+      toast({ type: 'info', title: 'No Data', message: 'No expenses to export' });
+      return;
+    }
     
     const headers = ['Date', 'Category', 'Description', 'Amount', 'Recurring'];
     const rows = expenses.map(e => [
@@ -131,6 +142,7 @@ export default function ExpensesPage() {
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, `expenses-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    toast({ type: 'success', title: 'Success', message: 'Expenses exported to CSV' });
   };
 
   return (
@@ -305,6 +317,7 @@ export default function ExpensesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" icon={<ChevronDown className="w-4 h-4" />} onClick={() => handleEdit(expense)} />
+                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDelete(expense.id)} />
                   </div>
                 </div>
               ))}
@@ -325,55 +338,78 @@ export default function ExpensesPage() {
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setEditingExpense(null); reset(); }}
         title={editingExpense ? 'Edit Expense' : 'Add Expense'}
+        description="Fill in the details below to add a new expense."
         size="md"
+        footer={
+          <div className="flex w-full justify-end gap-3">
+            <Button variant="outline" onClick={() => { setIsModalOpen(false); setEditingExpense(null); reset(); }}>
+              Cancel
+            </Button>
+            <Button type="submit" form="expense-form" loading={isSubmitting}>
+              {editingExpense ? 'Save Changes' : 'Add Expense'}
+            </Button>
+          </div>
+        }
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Amount"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            error={errors.amount?.message}
-            {...register('amount', { valueAsNumber: true })}
-            required
-          />
-          <Select
-            label="Category"
-            options={categories}
-            error={errors.category?.message}
-            {...register('category')}
-            required
-          />
+        <form id="expense-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Input
+              label="Amount"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              error={errors.amount?.message}
+              {...register('amount', { valueAsNumber: true })}
+              required
+              icon={<div className="text-neutral-400 dark:text-neutral-500">$</div>}
+              iconPosition="left"
+            />
+            <Select
+              label="Category"
+              options={categories}
+              error={errors.category?.message}
+              {...register('category')}
+              required
+            />
+          </div>
           <Input
             label="Description (optional)"
             placeholder="What did you buy?"
             {...register('description')}
           />
-          <Input
-            label="Date"
-            type="date"
-            error={errors.date?.message}
-            {...register('date')}
-            required
-          />
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="recurring"
-              {...register('is_recurring')}
-              className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-2 focus:ring-primary-500"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Input
+              label="Date"
+              type="date"
+              error={errors.date?.message}
+              {...register('date')}
+              required
             />
-            <label htmlFor="recurring" className="text-sm text-neutral-700 dark:text-neutral-300">
-              Recurring expense
-            </label>
-          </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => { setIsModalOpen(false); setEditingExpense(null); reset(); }}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={isSubmitting}>
-              {editingExpense ? 'Save Changes' : 'Add Expense'}
-            </Button>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="recurring"
+                {...register('is_recurring')}
+                className="sr-only peer"
+              />
+              <label htmlFor="recurring" className="flex items-center gap-3 cursor-pointer">
+                <div className={cn(
+                  'w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200',
+                  'border-neutral-300 dark:border-neutral-600',
+                  'peer-focus:ring-2 peer-focus:ring-primary-500 peer-focus:ring-offset-2 peer-focus:ring-offset-white dark:peer-focus:ring-offset-neutral-950',
+                  'peer-checked:bg-primary-600 peer-checked:border-primary-600',
+                  'peer-checked:dark:bg-primary-500 peer-checked:dark:border-primary-500',
+                  'hover:border-primary-400 dark:hover:border-primary-500'
+                )}>
+                  <svg className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Recurring expense
+                </span>
+              </label>
+            </div>
           </div>
         </form>
       </Modal>

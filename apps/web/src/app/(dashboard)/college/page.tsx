@@ -1,23 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import {
   GraduationCap, BookOpen, Calendar, AlertTriangle, Clock,
-  CheckCircle, XCircle, Plus, ChevronRight, Target,
-  TrendingUp, Award, BarChart2, Edit, MoreHorizontal
+  CheckCircle, Plus, ChevronRight, Target,
+  TrendingUp, Award, FolderOpen, User, ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Badge, Progress, Avatar, Tabs, TabsList, TabsTrigger, TabsContent, Dropdown, ScrollArea
+  Card, CardHeader, CardTitle, CardDescription, CardContent,
+  Button, Badge, Progress, Tabs, TabsList, TabsTrigger, TabsContent
 } from '@productivity-suite/ui';
 import {
   useCollegeDashboard, useCurrentAcademicTerm, useSubjects, useUpcomingAssignments, useUpcomingExams,
-  useTodayTimetable, useCreateAcademicTerm, AcademicTerm, SubjectWithTerm,
-  TimetableEntry, AcademicTask, AcademicTaskType, CollegeDashboardData
+  useTodayTimetable, AcademicTaskType, SubjectWithTerm
 } from '@productivity-suite/core';
 import { useAuth } from '@productivity-suite/core';
+import { CollegeOnboarding } from '@/components/CollegeOnboarding';
 
 const statusColors: Record<string, string> = {
   present: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
@@ -108,12 +108,12 @@ function AttendanceAlertCard({ subject }: { subject: SubjectWithTerm & { attenda
             )}
           </div>
         </div>
-        <Progress 
-          value={attendance_summary.percentage} 
-          max={100} 
-          size="sm" 
+        <Progress
+          value={attendance_summary.percentage}
+          max={100}
+          size="sm"
           className="w-32"
-          showLabel 
+          showLabel
           label={`${attendance_summary.attended}/${attendance_summary.total_classes}`}
         />
       </div>
@@ -121,8 +121,47 @@ function AttendanceAlertCard({ subject }: { subject: SubjectWithTerm & { attenda
   );
 }
 
+function NavigationCard({ title, description, icon: Icon, href, badge, badgeColor }: {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  badge?: number;
+  badgeColor?: 'primary' | 'success' | 'warning' | 'danger';
+}) {
+  const badgeColors = {
+    primary: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400',
+    success: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
+    warning: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
+    danger: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
+  };
+
+  return (
+    <Button variant="outline" className="h-32 flex-col items-start gap-3 p-6 text-left" asChild>
+      <Link href={href}>
+        <div className="flex items-start justify-between w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h3 className="font-medium text-neutral-900 dark:text-white">{title}</h3>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">{description}</p>
+            </div>
+          </div>
+          {badge !== undefined && (
+            <Badge variant="outline" size="sm" className={badgeColors[badgeColor || 'primary']}>
+              {badge}
+            </Badge>
+          )}
+        </div>
+        <ChevronRightIcon className="w-5 h-5 text-neutral-400" />
+      </Link>
+    </Button>
+  );
+}
+
 export default function CollegeDashboardPage() {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'timetable'>('overview');
   
   const handleTabChange = (value: string) => {
@@ -135,7 +174,6 @@ export default function CollegeDashboardPage() {
   const { data: upcomingAssignments } = useUpcomingAssignments();
   const { data: upcomingExams } = useUpcomingExams();
   const { data: todayTimetable } = useTodayTimetable(currentTerm?.id || '');
-  const createTerm = useCreateAcademicTerm();
 
   if (isLoading) {
     return (
@@ -151,26 +189,18 @@ export default function CollegeDashboardPage() {
     );
   }
 
-  // If no current term, show setup prompt
+  // If no current term, show onboarding flow
   if (!currentTerm) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">College Management</h1>
-            <p className="text-neutral-500 dark:text-neutral-400">Set up your academic term to get started</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Welcome! Let's set up your college management system</p>
           </div>
         </div>
 
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Create Your First Term</CardTitle>
-            <CardDescription>Set up your semester/quarter to start tracking subjects, attendance, and assignments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CreateTermForm onSuccess={() => window.location.reload()} />
-          </CardContent>
-        </Card>
+        <CollegeOnboarding onComplete={() => window.location.reload()} />
       </div>
     );
   }
@@ -193,7 +223,7 @@ export default function CollegeDashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
-            <Link href="/college/subjects">
+            <Link href="/college/subjects/new">
               <Plus className="w-4 h-4" />
               Add Subject
             </Link>
@@ -264,6 +294,40 @@ export default function CollegeDashboardPage() {
           value={assignments.length + exams.length}
           icon={Clock}
           variant={exams.length > 0 ? 'danger' : 'warning'}
+        />
+      </div>
+
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <NavigationCard
+          title="Timetable"
+          description="Weekly class schedule"
+          icon={Calendar}
+          href="/college/timetable"
+          badge={todayClasses.length > 0 ? todayClasses.length : undefined}
+          badgeColor="primary"
+        />
+        <NavigationCard
+          title="Academic Calendar"
+          description="Holidays, exams & deadlines"
+          icon={Calendar}
+          href="/college/calendar/upload"
+          badgeColor="warning"
+        />
+        <NavigationCard
+          title="Attendance"
+          description="Track & calculate attendance"
+          icon={Target}
+          href="/college/attendance"
+          badge={attendanceAlerts.length > 0 ? attendanceAlerts.length : undefined}
+          badgeColor="danger"
+        />
+        <NavigationCard
+          title="Documents"
+          description="Fee receipts, certificates & more"
+          icon={FolderOpen}
+          href="/college/documents"
+          badgeColor="primary"
         />
       </div>
 
@@ -467,6 +531,18 @@ export default function CollegeDashboardPage() {
                         <span className="text-sm">View Timetable</span>
                       </Link>
                     </Button>
+                    <Button variant="outline" className="h-20 flex-col gap-2" asChild>
+                      <Link href="/college/documents">
+                        <FolderOpen className="w-6 h-6" />
+                        <span className="text-sm">Documents</span>
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-col gap-2" asChild>
+                      <Link href="/college/profile">
+                        <User className="w-6 h-6" />
+                        <span className="text-sm">Profile</span>
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -607,96 +683,4 @@ function getTypeLabel(type: AcademicTaskType | null): string {
     case 'homework': return 'Homework';
     default: return 'Other';
   }
-}
-
-// Inline CreateTermForm to avoid circular dependency
-function CreateTermForm({ onSuccess }: { onSuccess: () => void }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    start_date: format(new Date(), 'yyyy-MM-dd'),
-    end_date: format(addDays(new Date(), 120), 'yyyy-MM-dd'),
-    is_current: true,
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const createTerm = useCreateAcademicTerm();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await createTerm.mutateAsync(formData);
-      onSuccess();
-    } catch (error) {
-      console.error('Failed to create term:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Term Name</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={e => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Fall 2024"
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Term Code</label>
-          <input
-            type="text"
-            value={formData.code}
-            onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-            placeholder="FA24"
-            maxLength={10}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            required
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Start Date</label>
-          <input
-            type="date"
-            value={formData.start_date}
-            onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">End Date</label>
-          <input
-            type="date"
-            value={formData.end_date}
-            onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            required
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="is_current"
-          checked={formData.is_current}
-          onChange={e => setFormData({ ...formData, is_current: e.target.checked })}
-          className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-2 focus:ring-primary-500"
-        />
-        <label htmlFor="is_current" className="text-sm text-neutral-700 dark:text-neutral-300">Set as current term</label>
-      </div>
-      <div className="flex justify-end gap-3 pt-4">
-        <Button type="button" variant="outline" onClick={onSuccess} disabled={isSubmitting}>Cancel</Button>
-        <Button type="submit" loading={isSubmitting} disabled={isSubmitting}>Create Term</Button>
-      </div>
-    </form>
-  );
 }

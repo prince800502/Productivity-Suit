@@ -82,21 +82,30 @@ export function useCreateAIProvider() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // If this is set as default, unset other defaults
-      if (provider.is_default) {
-        await supabase
-          .from('ai_providers')
-          .update({ is_default: false })
-          .eq('user_id', user.id);
-      }
-
-      const { data, error } = await supabase
-        .from('ai_providers')
-        .insert({ ...provider, user_id: user.id })
-        .select()
-        .single();
+      // Use the secure RPC that handles encryption server-side
+      const { data, error } = await supabase.rpc('create_ai_provider', {
+        p_user_id: user.id,
+        p_provider: provider.provider,
+        p_name: provider.name,
+        p_api_key: provider.api_key,
+        p_model: provider.model,
+        p_temperature: provider.temperature,
+        p_max_tokens: provider.max_tokens,
+        p_capabilities: provider.capabilities,
+        p_rate_limit_rpm: provider.rate_limit_rpm,
+        p_is_default: provider.is_default,
+        p_is_active: provider.is_active,
+        p_base_url: provider.base_url,
+      });
       if (error) throw error;
-      return data as AIProvider;
+      // Fetch the created provider to return full data
+      const { data: providerData, error: fetchError } = await supabase
+        .from('ai_providers')
+        .select('*')
+        .eq('id', data)
+        .single();
+      if (fetchError) throw fetchError;
+      return providerData as AIProvider;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: aiKeys.providers() });
@@ -110,24 +119,52 @@ export function useUpdateAIProvider() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<AIProviderForm> }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // If setting as default, unset other defaults
       if (updates.is_default) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from('ai_providers')
-            .update({ is_default: false })
-            .eq('user_id', user.id)
-            .neq('id', id);
-        }
+        await supabase
+          .from('ai_providers')
+          .update({ is_default: false })
+          .eq('user_id', user.id)
+          .neq('id', id);
       }
 
-      const { data, error } = await supabase
-        .from('ai_providers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      // If updating the API key, use the secure RPC that encrypts server-side
+      if (updates.api_key !== undefined) {
+        const { error: keyError } = await supabase.rpc('update_ai_provider_key', {
+          p_provider_id: id,
+          p_user_id: user.id,
+          p_new_api_key: updates.api_key,
+        });
+        if (keyError) throw keyError;
+      }
+
+      // Prepare updates for non-key fields (exclude api_key since it's handled separately)
+      const { api_key, ...otherUpdates } = updates;
+      let data, error;
+      
+      if (Object.keys(otherUpdates).length > 0) {
+        const { data: updateData, error: updateError } = await supabase
+          .from('ai_providers')
+          .update(otherUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+        data = updateData;
+        error = updateError;
+      } else {
+        // Just fetch the updated provider
+        const { data: fetchData, error: fetchError } = await supabase
+          .from('ai_providers')
+          .select('*')
+          .eq('id', id)
+          .single();
+        data = fetchData;
+        error = fetchError;
+      }
+      
       if (error) throw error;
       return data as AIProvider;
     },

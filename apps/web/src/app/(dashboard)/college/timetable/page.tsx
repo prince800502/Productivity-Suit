@@ -1,20 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar, Plus, GraduationCap, Clock, MapPin, MoreHorizontal, Edit, Trash2, Download, Upload, BookOpen } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isToday } from 'date-fns';
+import { ChevronLeft, ChevronRight, Calendar, Plus, GraduationCap, Clock, MapPin, Edit, Trash2, Download, BookOpen } from 'lucide-react';
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Badge, Input, Select, Modal, Textarea
+  Card, CardHeader, CardTitle, CardDescription, CardContent,
+  Button, Badge, Input, Select, Modal
 } from '@productivity-suite/ui';
 import {
-  useScheduleEvents, useCreateScheduleEvent, useUpdateScheduleEvent, useDeleteScheduleEvent,
-  useWeeklySchedule, useTodaySchedule, useHolidays, useCreateHoliday, useDeleteHoliday,
-  useSubjects, useCurrentAcademicTerm, ScheduleEvent, SubjectWithTerm
+  useCreateScheduleEvent, useUpdateScheduleEvent, useDeleteScheduleEvent,
+  useWeeklySchedule, useTodaySchedule, useHolidays, useDeleteHoliday,
+  useSubjects, useCurrentAcademicTerm, ScheduleEventType
 } from '@productivity-suite/core';
-import { scheduleEventSchema, ScheduleEventForm, ScheduleEventType } from '@productivity-suite/core';
+import { scheduleEventSchema, ScheduleEventForm } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useToast } from '@productivity-suite/ui';
+import { ConfirmationModal } from '@productivity-suite/ui';
 
 const eventTypes: { value: ScheduleEventType; label: string; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
   { value: 'class', label: 'Class', icon: GraduationCap, color: 'bg-blue-500' },
@@ -30,6 +32,8 @@ export default function CollegeTimetablePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showImport, setShowImport] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmType, setDeleteConfirmType] = useState<'event' | 'holiday' | null>(null);
   
   const { data: currentTerm } = useCurrentAcademicTerm();
   const { data: subjects } = useSubjects(currentTerm?.id);
@@ -40,15 +44,14 @@ export default function CollegeTimetablePage() {
   const createEvent = useCreateScheduleEvent();
   const updateEvent = useUpdateScheduleEvent();
   const deleteEvent = useDeleteScheduleEvent();
-  const createHoliday = useCreateHoliday();
   const deleteHoliday = useDeleteHoliday();
+  const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<ScheduleEventForm>({
     resolver: zodResolver(scheduleEventSchema),
@@ -66,13 +69,16 @@ export default function CollegeTimetablePage() {
     try {
       if (editingEvent) {
         await updateEvent.mutateAsync({ id: editingEvent.id, updates: data });
+        toast({ type: 'success', title: 'Event updated' });
       } else {
         await createEvent.mutateAsync(data);
+        toast({ type: 'success', title: 'Event created' });
       }
       setIsModalOpen(false);
       setEditingEvent(null);
       reset();
     } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to save event' });
       console.error('Failed to save event:', error);
     }
   };
@@ -89,6 +95,37 @@ export default function CollegeTimetablePage() {
     setValue('is_recurring', event.is_recurring);
     setValue('event_type', event.event_type);
     setIsModalOpen(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteEvent.mutateAsync(deleteConfirmId);
+      toast({ type: 'success', title: 'Event deleted' });
+    } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to delete event' });
+    } finally {
+      setDeleteConfirmId(null);
+      setDeleteConfirmType(null);
+    }
+  };
+
+  const handleDeleteHoliday = (holidayId: string) => {
+    setDeleteConfirmId(holidayId);
+    setDeleteConfirmType('holiday');
+  };
+
+  const confirmDeleteHoliday = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteHoliday.mutateAsync(deleteConfirmId);
+      toast({ type: 'success', title: 'Holiday deleted' });
+    } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to delete holiday' });
+    } finally {
+      setDeleteConfirmId(null);
+      setDeleteConfirmType(null);
+    }
   };
 
   const isHoliday = (date: string) => holidays?.some(h => h.date === date);
@@ -220,7 +257,6 @@ export default function CollegeTimetablePage() {
                   const hour = 6 + Math.floor(hourIndex / 2);
                   const minute = hourIndex % 2 === 0 ? '00' : '30';
                   const timeStr = `${hour.toString().padStart(2, '0')}:${minute}`;
-                  const nextTimeStr = `${(hour + (minute === '30' ? 1 : 0)).toString().padStart(2, '0')}:${minute === '30' ? '00' : '30'}`;
 
                   return (
                     <tr key={timeStr} className="border-b border-neutral-100 dark:border-neutral-800">
@@ -335,7 +371,7 @@ export default function CollegeTimetablePage() {
                       <p className="text-sm text-neutral-500 dark:text-neutral-400">{format(new Date(holiday.date), 'EEEE, MMMM d, yyyy')}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => { if (confirm('Delete this holiday?')) deleteHoliday.mutate(holiday.id); }} />
+                  <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDeleteHoliday(holiday.id)} />
                 </div>
               ))}
             </div>
@@ -453,6 +489,17 @@ export default function CollegeTimetablePage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => { setDeleteConfirmId(null); setDeleteConfirmType(null); }}
+        onConfirm={deleteConfirmType === 'event' ? confirmDeleteEvent : confirmDeleteHoliday}
+        title={deleteConfirmType === 'event' ? 'Delete Event' : 'Delete Holiday'}
+        description="Are you sure you want to delete this item? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteConfirmType === 'event' ? deleteEvent.isPending : deleteHoliday.isPending}
+      />
     </div>
   );
 }

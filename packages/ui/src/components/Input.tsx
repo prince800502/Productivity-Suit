@@ -8,10 +8,11 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
   glass?: boolean;
+  premium?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, icon, iconPosition = 'left', glass = true, className, id, ...props }, ref) => {
+  ({ label, error, hint, icon, iconPosition = 'left', glass = true, premium = false, className, id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const errorId = `${inputId}-error`;
     const hintId = `${inputId}-hint`;
@@ -19,13 +20,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && iconPosition === 'left' && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
               {icon}
             </div>
           )}
@@ -33,18 +34,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-lg',
-              'text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400',
+              'w-full rounded-xl',
+              'h-12', // 48px height
+              'text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400',
               'transition-all duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+              'focus:outline-none focus:ring-2 focus:ring-offset-2',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              icon && iconPosition === 'left' && 'pl-10',
-              icon && iconPosition === 'right' && 'pr-10',
+              icon && iconPosition === 'left' && 'pl-12',
+              icon && iconPosition === 'right' && 'pr-12',
               error
-                ? 'border-danger-500 focus:ring-danger-500'
+                ? 'border-danger-500 focus:ring-danger-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-neutral-950 focus:border-transparent'
+                : premium
+                ? 'bg-obsidian-900/50 dark:bg-obsidian-950/50 border-obsidian-700/50 dark:border-obsidian-800/50 hover:border-obsidian-600/50 dark:hover:border-obsidian-700/50 focus:ring-2 focus:ring-champagne-500 focus:ring-offset-2 focus:ring-offset-obsidian-950 focus:border-transparent text-white placeholder:text-obsidian-500'
                 : glass
-                  ? 'glass-interactive'
-                  : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
+                ? 'glass-input'
+                : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
               className
             )}
             aria-invalid={error ? 'true' : 'false'}
@@ -52,18 +56,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {icon && iconPosition === 'right' && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
               {icon}
             </div>
           )}
         </div>
         {error && (
-          <p id={errorId} className="mt-1.5 text-sm text-danger-600 dark:text-danger-400" role="alert">
+          <p id={errorId} className="mt-2 text-sm text-danger-600 dark:text-danger-400" role="alert">
             {error}
           </p>
         )}
         {hint && !error && (
-          <p id={hintId} className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+          <p id={hintId} className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
             {hint}
           </p>
         )}
@@ -90,7 +94,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             {label}
           </label>
         )}
@@ -98,15 +102,16 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full rounded-lg',
-            'text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400',
+            'w-full rounded-xl',
+            'h-24', // 96px default height
+            'text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400',
             'transition-all duration-200 resize-y min-h-[80px]',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
+            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-neutral-950 focus:border-transparent',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             error
               ? 'border-danger-500 focus:ring-danger-500'
               : glass
-                ? 'glass-interactive'
+                ? 'glass-input'
                 : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
             className
           )}
@@ -115,12 +120,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {error && (
-          <p id={errorId} className="mt-1.5 text-sm text-danger-600 dark:text-danger-400" role="alert">
+          <p id={errorId} className="mt-2 text-sm text-danger-600 dark:text-danger-400" role="alert">
             {error}
           </p>
         )}
         {hint && !error && (
-          <p id={hintId} className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+          <p id={hintId} className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
             {hint}
           </p>
         )}
@@ -149,48 +154,56 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={selectId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+          <label htmlFor={selectId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             {label}
           </label>
         )}
-        <select
-          ref={ref}
-          id={selectId}
-          className={cn(
-            'w-full rounded-lg',
-            'text-neutral-900 dark:text-neutral-100',
-            'transition-all duration-200 appearance-none',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            error
-              ? 'border-danger-500 focus:ring-danger-500'
-              : glass
-                ? 'glass-interactive'
-                : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50',
-            className
-          )}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? errorId : hint ? hintId : undefined}
-          {...props}
-        >
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          )}
-          {options.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            ref={ref}
+            id={selectId}
+            className={cn(
+              'w-full rounded-xl',
+              'h-12', // 48px height
+              'text-base text-neutral-900 dark:text-neutral-100',
+              'transition-all duration-200 appearance-none',
+              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-neutral-950 focus:border-transparent',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              error
+                ? 'border-danger-500 focus:ring-danger-500'
+                : glass
+                  ? 'glass-input pr-10'
+                  : 'bg-white dark:bg-neutral-900 border border-neutral-300/50 dark:border-neutral-700/50 hover:border-neutral-400/50 dark:hover:border-neutral-600/50 pr-10',
+              className
+            )}
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? errorId : hint ? hintId : undefined}
+            {...props}
+          >
+            {placeholder && (
+              <option value="" disabled>
+                {placeholder}
+              </option>
+            )}
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
         {error && (
-          <p id={errorId} className="mt-1.5 text-sm text-danger-600 dark:text-danger-400" role="alert">
+          <p id={errorId} className="mt-2 text-sm text-danger-600 dark:text-danger-400" role="alert">
             {error}
           </p>
         )}
         {hint && !error && (
-          <p id={hintId} className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+          <p id={hintId} className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
             {hint}
           </p>
         )}
@@ -213,22 +226,33 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
     return (
       <div className="flex items-start gap-3">
-        <input
-          ref={ref}
-          type="checkbox"
-          id={checkboxId}
-          className={cn(
-            'mt-0.5 h-4 w-4 rounded border-neutral-300/50 dark:border-neutral-700/50',
-            'text-primary-600 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            'dark:bg-neutral-800 dark:checked:bg-primary-600 dark:checked:border-primary-600',
-            className
-          )}
-          aria-describedby={description ? descId : undefined}
-          {...props}
-        />
-        <div className="flex-1">
-          <label htmlFor={checkboxId} className="text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer">
+        <label className="relative flex items-center cursor-pointer">
+          <input
+            ref={ref}
+            type="checkbox"
+            id={checkboxId}
+            className={cn(
+              'sr-only peer',
+              props.disabled && 'pointer-events-none opacity-50'
+            )}
+            aria-describedby={description ? descId : undefined}
+            {...props}
+          />
+          <div className={cn(
+            'w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200',
+            'border-neutral-300 dark:border-neutral-600',
+            'peer-focus:ring-2 peer-focus:ring-primary-500 peer-focus:ring-offset-2 peer-focus:ring-offset-white dark:peer-focus:ring-offset-neutral-950',
+            'peer-checked:bg-primary-600 peer-checked:border-primary-600',
+            'peer-checked:dark:bg-primary-500 peer-checked:dark:border-primary-500',
+            'hover:border-primary-400 dark:hover:border-primary-500'
+          )}>
+            <svg className="w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </label>
+        <div className="flex-1 pt-0.5">
+          <label htmlFor={checkboxId} className="text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer peer-disabled:opacity-50">
             {label}
           </label>
           {description && (

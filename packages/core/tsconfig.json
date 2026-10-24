@@ -13,7 +13,6 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
       "@productivity-suite/core/*": ["./src/*"]

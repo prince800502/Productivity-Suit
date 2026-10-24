@@ -7,13 +7,14 @@ import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
   Button, Input, Select, Badge, Modal, Tabs, Textarea, Switch
 } from '@productivity-suite/ui';
-import { useAIContext, useDefaultAIProvider, useAIConversations, useCreateAIConversation, useAIMessages, useSendAIMessage, useCreateAICommand, useAICommands, useGenerateWeeklyReport, useLatestAIWeeklyReport, AIProvider, AIConversation, AIMessage, AIContext } from '@productivity-suite/core';
+import { useAIContext, useDefaultAIProvider, useAIConversations, useCreateAIConversation, useAIMessages, useSendAIMessage, useCreateAICommand, useAICommands, useGenerateWeeklyReport, useLatestAIWeeklyReport, AIProvider, AIConversation, AIMessage, AIContext, aiKeys, useAuth } from '@productivity-suite/core';
 import { useAIProviders, useCreateAIProvider, useUpdateAIProvider, useDeleteAIProvider, AIProviderForm } from '@productivity-suite/core';
 import { formatCurrency } from '@productivity-suite/ui';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { saveAs } from 'file-saver';
+import { useQueryClient } from '@tanstack/react-query';
 
 const aiProviderSchema = z.object({
   provider: z.enum(['openai', 'anthropic', 'google', 'ollama', 'custom']),
@@ -57,6 +58,10 @@ export default function AIPage() {
   const [editingConversation, setEditingConversation] = useState<any>(null);
   const [messagesEndRef, setMessagesEndRef] = useState<HTMLDivElement | null>(null);
   const [showConfigBanner, setShowConfigBanner] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const { session } = useAuth();
 
   const { data: context } = useAIContext();
   const { data: defaultProvider } = useDefaultAIProvider();
@@ -110,6 +115,11 @@ export default function AIPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversationId || isLoading) return;
 
+    // Check for valid session
+    if (!session?.access_token) {
+      throw new Error('Authentication required. Please sign in to use AI chat.');
+    }
+
     setIsLoading(true);
     try {
       // Send user message
@@ -125,6 +135,7 @@ export default function AIPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           conversation_id: selectedConversationId,
@@ -142,6 +153,8 @@ export default function AIPage() {
       // Just clear the input
       if (aiResponse?.content) {
         setNewMessage('');
+        // Invalidate messages query to refetch with the new assistant message
+        queryClient.invalidateQueries({ queryKey: aiKeys.messages(selectedConversationId) });
       } else {
         throw new Error('Empty response from AI');
       }
@@ -235,7 +248,7 @@ export default function AIPage() {
         { value: 'reports', label: 'Reports', icon: <Brain className="w-4 h-4" /> },
       ]} fullWidth />
 
-      {activeTab === 'chat' && (
+      {activeTab === 'chat' && (<>
         <div className="h-[calc(100vh-300px)] flex flex-col">
           <div className="flex-1 flex flex-col">
             {/* Conversation List Sidebar (collapsible on mobile) */}
@@ -339,27 +352,28 @@ export default function AIPage() {
               </div>
             </div>
           </div>
-
-          {/* Mobile Conversation List */}
-          <div className="lg:hidden border-t border-neutral-200 dark:border-neutral-800">
-            <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-              <h3 className="font-semibold">Conversations</h3>
-              <Button variant="ghost" size="sm" icon={<Plus className="w-4 h-4" />} onClick={handleNewConversation} />
-            </div>
-            <div className="max-h-60 overflow-y-auto">
-              {conversations?.map(conv => (
-                <button
-                  key={conv.id}
-                  className={`w-full px-4 py-3 text-left transition-colors ${selectedConversationId === conv.id ? 'bg-primary-50 dark:bg-primary-900/30' : ''}`}
-                  onClick={() => setSelectedConversationId(conv.id)}
-                >
-                  <p className="font-medium text-sm truncate">{conv.title || 'Untitled'}</p>
-                  <p className="text-xs text-neutral-500 truncate">{conv.updated_at ? format(new Date(conv.updated_at), 'MMM d') : 'New'}</p>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
+
+      {/* Mobile Conversation List */}
+      <div className="lg:hidden border-t border-neutral-200 dark:border-neutral-800">
+        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+          <h3 className="font-semibold">Conversations</h3>
+          <Button variant="ghost" size="sm" icon={<Plus className="w-4 h-4" />} onClick={handleNewConversation} />
+        </div>
+        <div className="max-h-60 overflow-y-auto">
+          {conversations?.map(conv => (
+            <button
+              key={conv.id}
+              className={`w-full px-4 py-3 text-left transition-colors ${selectedConversationId === conv.id ? 'bg-primary-50 dark:bg-primary-900/30' : ''}`}
+              onClick={() => setSelectedConversationId(conv.id)}
+            >
+              <p className="font-medium text-sm truncate">{conv.title || 'Untitled'}</p>
+              <p className="text-xs text-neutral-500 truncate">{conv.updated_at ? format(new Date(conv.updated_at), 'MMM d') : 'New'}</p>
+            </button>
+        ))}
+        </div>
+      </div>
+      </>
       )}
 
       {activeTab === 'conversations' && (
@@ -369,7 +383,7 @@ export default function AIPage() {
               <CardTitle>Conversation History</CardTitle>
               <CardDescription>Your past AI conversations</CardDescription>
             </div>
-            <Button icon={<Plus className="w-4 h-4" />} onClick={handleNewConversation}>
+            <Button onClick={handleNewConversation} icon={<Plus className="w-4 h-4" />}>
               New Conversation
             </Button>
           </CardHeader>
@@ -466,7 +480,7 @@ export default function AIPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
+                {[ 
                   { provider: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
                   { provider: 'Anthropic', models: ['claude-3-5-sonnet', 'claude-3-opus', 'claude-3-haiku'] },
                   { provider: 'Google', models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'] },
@@ -604,6 +618,16 @@ export default function AIPage() {
               { value: 'embedding', label: 'Embedding' },
               { value: 'function_calling', label: 'Function Calling' },
             ]} error={providerErrors.capabilities?.message} {...regProvider('capabilities')} multiple />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_default"
+              {...regProvider('is_default')}
+            />
+            <label htmlFor="is_default" className="text-sm text-neutral-700 dark:text-neutral-300">
+              Set as default provider
+            </label>
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => { setIsProviderModalOpen(false); setEditingProvider(null); resetProvider(); }}>Cancel</Button>

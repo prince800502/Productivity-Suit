@@ -1,3 +1,5 @@
+'use client';
+
 import { Fragment, ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../utils';
@@ -15,6 +17,11 @@ export interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
+  // New props for enhanced modal
+  footer?: ReactNode;
+  headerClassName?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
 }
 
 export function Modal({
@@ -27,6 +34,10 @@ export function Modal({
   showCloseButton = true,
   closeOnOverlayClick = true,
   closeOnEscape = true,
+  footer,
+  headerClassName,
+  bodyClassName,
+  footerClassName,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
@@ -37,7 +48,7 @@ export function Modal({
       const body = getDocument()?.body;
       if (body) body.style.overflow = 'hidden';
       modalRef.current?.focus();
-      
+
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && closeOnEscape) {
           onClose();
@@ -46,7 +57,7 @@ export function Modal({
           trapFocus(e);
         }
       };
-      
+
       getDocument()?.addEventListener('keydown', handleKeyDown);
       return () => {
         getDocument()?.removeEventListener('keydown', handleKeyDown);
@@ -64,7 +75,7 @@ export function Modal({
     );
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
-    
+
     if (e.shiftKey && getDocument()?.activeElement === firstElement) {
       e.preventDefault();
       lastElement?.focus();
@@ -78,10 +89,10 @@ export function Modal({
 
   const sizes = {
     sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    full: 'max-w-4xl',
+    md: 'max-w-[40rem]',    // 640px - standard form modal
+    lg: 'max-w-[48rem]',    // 768px - larger forms
+    xl: 'max-w-[56rem]',    // 896px - large forms
+    full: 'max-w-[90vw]',   // full screen
   };
 
   const modalContent = (
@@ -92,26 +103,29 @@ export function Modal({
       aria-labelledby={title ? 'modal-title' : undefined}
       aria-describedby={description ? 'modal-description' : undefined}
     >
+      {/* Backdrop with blur - only blurs what's behind it (the app) */}
       <div
         className="fixed inset-0 modal-overlay modal-overlay-enter"
         aria-hidden="true"
         onClick={closeOnOverlayClick ? onClose : undefined}
       />
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-[calc(100dvh-48px)] items-center justify-center p-4 md:p-6">
         <div
           ref={modalRef}
           tabIndex={-1}
           className={cn(
-            'w-full glass-elevated rounded-2xl shadow-glass-elevated modal-enter',
+            'w-full rounded-2xl modal-enter modal-content animate-in',
             sizes[size]
           )}
-          style={{ borderColor: 'rgba(148, 163, 184, 0.2)' }}
         >
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between p-6 border-b">
-              <div>
+            <div className={cn(
+              'flex items-start justify-between px-6 py-5 border-b',
+              headerClassName
+            )}>
+              <div className="pr-4">
                 {title && (
-                  <h2 id="modal-title" className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  <h2 id="modal-title" className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                     {title}
                   </h2>
                 )}
@@ -125,14 +139,25 @@ export function Modal({
                 <Button
                   variant="ghost"
                   size="sm"
-                  icon={<X className="h-4 w-4" />}
+                  icon={<X className="h-5 w-5" />}
                   onClick={onClose}
                   aria-label="Close modal"
+                  className="flex-shrink-0 -mr-2"
                 />
               )}
             </div>
           )}
-          <div className="p-6">{children}</div>
+          <div className={cn('overflow-y-auto max-h-[calc(100dvh-12rem)] p-6', bodyClassName)}>
+            {children}
+          </div>
+          {footer && (
+            <div className={cn(
+              'flex items-center justify-end gap-3 px-6 py-4 border-t',
+              footerClassName
+            )}>
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -173,9 +198,8 @@ export function ConfirmModal({
   loading = false,
 }: ConfirmModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <p className="text-neutral-600 dark:text-neutral-400 mb-6">{message}</p>
-      <div className="flex justify-end gap-3">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm" footer={
+      <div className="flex justify-end gap-3 w-full">
         <Button variant="ghost" onClick={onClose} disabled={loading}>
           {cancelText}
         </Button>
@@ -183,6 +207,8 @@ export function ConfirmModal({
           {confirmText}
         </Button>
       </div>
+    }>
+      <p className="text-neutral-600 dark:text-neutral-400 text-base leading-relaxed">{message}</p>
     </Modal>
   );
 }
@@ -211,13 +237,14 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'info' }: A
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <div className="flex items-start gap-3">
-        <span className={cn('text-2xl mt-0.5', colors[type])}>{icons[type]}</span>
-        <p className="text-neutral-600 dark:text-neutral-400">{message}</p>
-      </div>
-      <div className="mt-6 flex justify-end">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm" footer={
+      <div className="flex justify-end w-full">
         <Button onClick={onClose}>OK</Button>
+      </div>
+    }>
+      <div className="flex items-start gap-3">
+        <span className={cn('text-2xl mt-0.5 flex-shrink-0', colors[type])}>{icons[type]}</span>
+        <p className="text-neutral-600 dark:text-neutral-400 text-base leading-relaxed">{message}</p>
       </div>
     </Modal>
   );

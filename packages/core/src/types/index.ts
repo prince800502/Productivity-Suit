@@ -190,6 +190,36 @@ export interface Database {
         Insert: Omit<SubjectGrade, 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Omit<SubjectGrade, 'id' | 'created_at' | 'updated_at'>>;
       };
+      academic_calendar_events: {
+        Row: AcademicCalendarEvent;
+        Insert: Omit<AcademicCalendarEvent, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AcademicCalendarEvent, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      timetable_imports: {
+        Row: TimetableImport;
+        Insert: Omit<TimetableImport, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<TimetableImport, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      attendance_baselines: {
+        Row: AttendanceBaseline;
+        Insert: Omit<AttendanceBaseline, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AttendanceBaseline, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      academic_documents: {
+        Row: AcademicDocument;
+        Insert: Omit<AcademicDocument, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AcademicDocument, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      notification_rules: {
+        Row: NotificationRule;
+        Insert: Omit<NotificationRule, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<NotificationRule, 'id' | 'created_at' | 'updated_at'>>;
+      };
+      attendance_auto_mark_config: {
+        Row: AttendanceAutoMarkConfig;
+        Insert: Omit<AttendanceAutoMarkConfig, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<AttendanceAutoMarkConfig, 'id' | 'created_at' | 'updated_at'>>;
+      };
     };
   };
 }
@@ -204,6 +234,15 @@ export interface Profile {
   monthly_budget: number | null;
   theme: 'light' | 'dark' | 'system';
   notification_preferences: NotificationPreferences | null;
+  // College profile fields
+  college_name: string | null;
+  university: string | null;
+  degree: string | null;
+  branch: string | null;
+  academic_year: string | null;
+  current_semester: number | null;
+  roll_number: string | null;
+  enrollment_number: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -777,7 +816,7 @@ export type NotificationType =
   | 'custom';
 
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type NotificationChannel = 'in_app' | 'email' | 'push' | 'sms';
+// NotificationChannel is defined later with 'browser' support
 
 export interface Notification {
   id: string;
@@ -1076,6 +1115,239 @@ export interface CollegeDashboardData {
   };
 }
 
+// ============================================================
+// ACADEMIC DOCUMENTS
+// ============================================================
+
+export type DocumentCategory = 
+  | 'fee_structure' 
+  | 'fee_receipts' 
+  | 'bonafide_certificates' 
+  | 'scholarship_documents' 
+  | 'scholarship_receipts' 
+  | 'academic_calendars' 
+  | 'examination_notices' 
+  | 'syllabus' 
+  | 'admit_cards' 
+  | 'mark_sheets' 
+  | 'college_notices' 
+  | 'other';
+
+export type DocumentFileType = 'pdf' | 'image' | 'document' | 'spreadsheet' | 'other';
+
+export type DocumentSource = 'manual' | 'calendar_import' | 'timetable_import' | 'assignment_submission';
+
+export interface AcademicDocument {
+  id: string;
+  user_id: string;
+  academic_term_id: string | null;
+  subject_id: string | null;
+  filename: string;
+  original_filename: string;
+  file_type: DocumentFileType;
+  mime_type: string | null;
+  file_size: number;
+  storage_path: string;
+  category: DocumentCategory;
+  folder: string | null;
+  academic_year: string | null;
+  semester: string | null;
+  description: string | null;
+  source: DocumentSource;
+  import_batch_id: string | null;
+  is_archived: boolean;
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AcademicDocumentForm {
+  academic_term_id?: string | null;
+  subject_id?: string | null;
+  category: DocumentCategory;
+  folder?: string | null;
+  academic_year?: string | null;
+  semester?: string | null;
+  description?: string | null;
+}
+
+// ============================================================
+// NOTIFICATION RULES
+// ============================================================
+
+export type NotificationTriggerType = 
+  | 'class_starting' 
+  | 'class_ending' 
+  | 'break_starting' 
+  | 'break_ending'
+  | 'exam_reminder' 
+  | 'assignment_due' 
+  | 'academic_event' 
+  | 'schedule_change';
+
+export type NotificationChannel = 'in_app' | 'browser' | 'email';
+
+export interface NotificationRule {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  is_enabled: boolean;
+  trigger_type: NotificationTriggerType;
+  lead_time_minutes: number;
+  filters: Record<string, unknown>;
+  channels: NotificationChannel[];
+  quiet_hours_start: string;
+  quiet_hours_end: string;
+  timezone: string;
+  cooldown_minutes: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificationRuleForm {
+  name: string;
+  description?: string | null;
+  is_enabled?: boolean;
+  trigger_type: NotificationTriggerType;
+  lead_time_minutes?: number;
+  filters?: Record<string, unknown>;
+  channels?: NotificationChannel[];
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+  timezone?: string;
+  cooldown_minutes?: number;
+}
+
+// ============================================================
+// ATTENDANCE AUTO-MARK CONFIG
+// ============================================================
+
+export type AutoMarkStatus = 'present' | 'absent' | 'excused';
+export type AutoMarkSource = 'auto' | 'manual' | 'import';
+
+export interface AttendanceAutoMarkConfig {
+  id: string;
+  user_id: string;
+  is_enabled: boolean;
+  grace_period_minutes: number;
+  apply_to_all_subjects: boolean;
+  subject_ids: string[];
+  default_status: AutoMarkStatus;
+  exclude_holidays: boolean;
+  exclude_cancelled_classes: boolean;
+  only_past_classes: boolean;
+  notify_before_auto_mark: boolean;
+  notification_lead_time_minutes: number;
+  mark_source: AutoMarkSource;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AttendanceAutoMarkConfigForm {
+  is_enabled?: boolean;
+  grace_period_minutes?: number;
+  apply_to_all_subjects?: boolean;
+  subject_ids?: string[];
+  default_status?: AutoMarkStatus;
+  exclude_holidays?: boolean;
+  exclude_cancelled_classes?: boolean;
+  only_past_classes?: boolean;
+  notify_before_auto_mark?: boolean;
+  notification_lead_time_minutes?: number;
+  mark_source?: AutoMarkSource;
+}
+
+// ============================================================
+// ACADEMIC CALENDAR EVENTS (from database)
+// ============================================================
+
+export interface AcademicCalendarEvent {
+  id: string;
+  user_id: string;
+  academic_term_id: string | null;
+  title: string;
+  description: string | null;
+  event_type: 'holiday' | 'exam' | 'exam_period' | 'assignment_due' | 'registration_deadline' | 'college_event' | 'other';
+  start_date: string;
+  end_date: string | null;
+  is_recurring: boolean;
+  recurrence_rule: string | null;
+  source: 'pdf_import' | 'manual' | 'ics_import' | 'csv_import';
+  import_batch_id: string | null;
+  confidence_score: number | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AcademicCalendarEventForm {
+  academic_term_id?: string | null;
+  title: string;
+  description?: string | null;
+  event_type: AcademicCalendarEvent['event_type'];
+  start_date: string;
+  end_date?: string | null;
+  is_recurring?: boolean;
+  recurrence_rule?: string | null;
+  source?: AcademicCalendarEvent['source'];
+  import_batch_id?: string | null;
+  confidence_score?: number | null;
+  metadata?: Record<string, unknown>;
+}
+
+// ============================================================
+// TIMETABLE IMPORTS
+// ============================================================
+
+export interface TimetableImport {
+  id: string;
+  user_id: string;
+  academic_term_id: string | null;
+  filename: string;
+  file_type: 'pdf' | 'csv' | 'ics' | 'manual';
+  file_size: number | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  extracted_data: unknown | null;
+  parsing_errors: unknown | null;
+  imported_count: number;
+  skipped_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================
+// ATTENDANCE BASELINES
+// ============================================================
+
+export type BaselineSource = 'pdf_import' | 'manual' | 'legacy_import';
+
+export interface AttendanceBaseline {
+  id: string;
+  user_id: string;
+  subject_id: string;
+  total_conducted: number;
+  total_attended: number;
+  source: BaselineSource;
+  import_batch_id: string | null;
+  semester: string | null;
+  academic_term_id: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AttendanceBaselineForm {
+  subject_id: string;
+  total_conducted: number;
+  total_attended: number;
+  source: BaselineSource;
+  import_batch_id?: string | null;
+  semester?: string | null;
+  academic_term_id?: string | null;
+  notes?: string | null;
+}
+
 // Grade letter calculation
 export function calculateLetterGrade(percentage: number): string {
   if (percentage >= 97) return 'A+';
@@ -1235,6 +1507,78 @@ export interface AttendancePlannerConfig {
   attended_classes: number;
   use_timetable: boolean;
   start_date: string | null;
+}
+
+// ============================================================
+// DOCUMENT PARSING TYPES
+// ============================================================
+
+export interface ImportAttendanceBaselineData {
+  subject_id: string;
+  total_conducted: number;
+  total_attended: number;
+  source: 'pdf_import' | 'manual' | 'legacy_import';
+  import_batch_id?: string;
+  semester?: string;
+  academic_term_id?: string;
+  notes?: string;
+}
+
+export interface DocumentParseResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  warnings?: string[];
+}
+
+export interface ParsedCalendarEvent {
+  title: string;
+  description?: string;
+  event_type: 'holiday' | 'exam' | 'exam_period' | 'assignment_due' | 'registration_deadline' | 'college_event' | 'other';
+  start_date: string; // YYYY-MM-DD
+  end_date?: string;
+  is_recurring: boolean;
+  recurrence_rule?: string;
+  confidence: number; // 0.0 to 1.0
+  raw_text?: string;
+}
+
+export interface ParsedTimetableEntry {
+  title: string;
+  subject_name?: string;
+  subject_code?: string;
+  day_of_week: number; // 0-6 (Mon-Sun)
+  start_time: string; // HH:MM
+  end_time: string; // HH:MM
+  location?: string;
+  event_type: 'class' | 'lab' | 'tutorial' | 'seminar' | 'other';
+  color?: string;
+  confidence: number;
+  raw_text?: string;
+}
+
+export interface TimetableImportData {
+  events: ParsedTimetableEntry[];
+  subjects: Array<{
+    name: string;
+    code: string;
+    color: string;
+  }>;
+  metadata: {
+    total_entries: number;
+    parsed_at: string;
+    confidence_avg: number;
+  };
+}
+
+export interface AcademicCalendarImportData {
+  events: ParsedCalendarEvent[];
+  metadata: {
+    total_events: number;
+    parsed_at: string;
+    confidence_avg: number;
+    date_range?: { start: string; end: string };
+  };
 }
 
 export interface QuickCheckResult {
@@ -1614,16 +1958,27 @@ export const expenseSchema = z.object({
   recurring_frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional(),
 });
 
-export const taskSchema = z.object({
+// Helper schema for datetime-local input that accepts empty strings
+export const datetimeLocalString = z.preprocess(
+  (val) => (val === '' ? null : val),
+  z.string().datetime({ local: true }).optional().nullable()
+);
+
+export const taskSchemaBase = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().max(500).optional(),
   status: z.enum(['todo', 'in_progress', 'review', 'done', 'archived']).default('todo'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
-  due_date: z.string().datetime().optional().nullable().transform(val => val === '' ? null : val),
+  due_date: datetimeLocalString,
   estimated_minutes: z.number().positive().optional().nullable(),
   tags: z.array(z.string()).default([]),
   parent_task_id: z.string().uuid().optional().nullable(),
 });
+
+export const taskSchema = taskSchemaBase.transform(data => ({
+  ...data,
+  due_date: data.due_date === '' ? null : data.due_date,
+}));
 
 export const routineSchema = z.object({
   name: z.string().min(1).max(50),
@@ -1643,8 +1998,26 @@ export const scheduleEventSchema = z.object({
   title: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
   location: z.string().max(200).optional(),
-  start_time: z.string().datetime(),
-  end_time: z.string().datetime(),
+  start_time: z.string().datetime({ local: true }).transform(val => {
+    // Convert datetime-local format (YYYY-MM-DDTHH:mm) to ISO with seconds
+    if (val.includes('T') && !val.endsWith('Z') && !val.includes('+') && !val.includes('-', 15)) {
+      const parts = val.split('T');
+      if (parts[1] && parts[1].split(':').length === 2) {
+        return `${val}:00`;
+      }
+    }
+    return val;
+  }),
+  end_time: z.string().datetime({ local: true }).transform(val => {
+    // Convert datetime-local format (YYYY-MM-DDTHH:mm) to ISO with seconds
+    if (val.includes('T') && !val.endsWith('Z') && !val.includes('+') && !val.includes('-', 15)) {
+      const parts = val.split('T');
+      if (parts[1] && parts[1].split(':').length === 2) {
+        return `${val}:00`;
+      }
+    }
+    return val;
+  }),
   day_of_week: z.number().min(0).max(6),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   is_recurring: z.boolean().default(true),

@@ -655,6 +655,7 @@ export function useTimetable(termId: string, weekStart: string) {
       // Get schedule events for this term's subjects
       const subjectIds = subjects?.map((s: Subject) => s.id) || [];
       
+      // Filter: class events must belong to this term's subjects; non-class events (work, personal, appointment) are always shown
       let query = supabase
         .from('schedule_events')
         .select('*')
@@ -663,8 +664,11 @@ export function useTimetable(termId: string, weekStart: string) {
         .order('start_time', { ascending: true });
 
       if (subjectIds.length > 0) {
-        // We need to link schedule_events to subjects - for now get all and filter
-        // In a full implementation, we'd add subject_id to schedule_events
+        // Include: (class events with subject_id in term's subjects) OR (non-class events)
+        query = query.or(`and(event_type.eq.class,subject_id.in.(${subjectIds.join(',')})),and(event_type.neq.class)`);
+      } else {
+        // No subjects in term: only show non-class events
+        query = query.neq('event_type', 'class');
       }
 
       const { data: events, error: eventsError } = await query;
@@ -720,13 +724,23 @@ export function useTodayTimetable(termId: string) {
       const subjectMap = new Map<string, Subject>();
       subjects?.forEach((s: Subject) => subjectMap.set(s.id, s as Subject));
 
-      // Get schedule events
-      const { data: events, error: eventsError } = await supabase
+      const subjectIds = subjects?.map((s: Subject) => s.id) || [];
+
+      // Get schedule events: class events must belong to this term's subjects; non-class events always shown
+      let eventsQuery = supabase
         .from('schedule_events')
         .select('*')
         .eq('day_of_week', adjustedDayOfWeek)
         .eq('is_recurring', true)
         .order('start_time', { ascending: true });
+
+      if (subjectIds.length > 0) {
+        eventsQuery = eventsQuery.or(`and(event_type.eq.class,subject_id.in.(${subjectIds.join(',')})),and(event_type.neq.class)`);
+      } else {
+        eventsQuery = eventsQuery.neq('event_type', 'class');
+      }
+
+      const { data: events, error: eventsError } = await eventsQuery;
       if (eventsError) throw eventsError;
 
       // Get holidays
@@ -904,6 +918,7 @@ export const attendancePlannerKeys = {
   all: ['attendance-planner'] as const,
   config: () => [...attendancePlannerKeys.all, 'config'] as const,
   overallSummary: () => [...attendancePlannerKeys.all, 'overall-summary'] as const,
+  baselines: () => [...attendancePlannerKeys.all, 'baselines'] as const,
 };
 
 // Overall attendance summary across all subjects
@@ -1086,3 +1101,25 @@ export function usePlannerHolidays(startDate?: string, endDate?: string) {
     },
   });
 }
+
+// Re-export calculation functions and types for use in other modules
+export {
+  calculateQuickCheck,
+  calculateClassSkip,
+  calculateTargetReach,
+  calculateExactDayPlan,
+  calculateHolidayPreview,
+} from '../types';
+
+export type {
+  QuickCheckResult,
+  ClassSkipResult,
+  TargetReachResult,
+  ExactDayPlanResult,
+  HolidayPreviewRow,
+  AttendancePlannerConfig,
+  ParsedCalendarEvent,
+  ParsedTimetableEntry,
+  TimetableImportData,
+  AcademicCalendarImportData,
+} from '../types';

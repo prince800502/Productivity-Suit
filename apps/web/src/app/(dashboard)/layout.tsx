@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@productivity-suite/ui';
@@ -14,6 +14,7 @@ import {
 import { Button, Avatar, Dropdown } from '@productivity-suite/ui';
 import { useAuth } from '@productivity-suite/core';
 import { useTheme } from '@productivity-suite/ui';
+import { useQueryClient } from '@tanstack/react-query';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -74,13 +75,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { toggleTheme, resolvedMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Client-side auth guard: redirect to login if user becomes null while on a protected route
+  // This handles bfcache restoration where middleware doesn't run
+  useEffect(() => {
+    if (user === null) {
+      // Clear all React Query cached data to prevent stale data exposure
+      queryClient.clear();
+      // Use replace to avoid adding login to history (Back button won't return to stale dashboard)
+      router.replace('/login?redirect=' + encodeURIComponent(pathname));
+    }
+  }, [user, pathname, router, queryClient]);
+
+  // Handle bfcache restoration: force auth re-check when page is shown from bfcache
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from bfcache, trigger a router refresh to re-run middleware
+        router.refresh();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [router]);
 
   const handleUserSelect = async (value: string) => {
     if (value === 'signout') {
       setIsSigningOut(true);
       try {
         await handleSignOut();
-        // The auth state change will redirect via middleware
+        // Clear React Query cache immediately
+        queryClient.clear();
+        // Use replace to replace the dashboard entry in history with homepage
+        // This prevents Back button from returning to stale dashboard
+        router.replace('/');
       } catch (error) {
         console.error('Sign out error:', error);
       } finally {
@@ -97,12 +127,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  // If no user, don't render dashboard content (will redirect via useEffect above)
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-transparent relative">
-      {/* Ambient background glow */}
-      <div className={`ambient-bg ${resolvedMode}`} aria-hidden="true">
-        <div className="glow-3" aria-hidden="true" />
-      </div>
       
       {/* Sidebar */}
       <aside

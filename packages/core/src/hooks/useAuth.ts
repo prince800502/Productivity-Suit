@@ -108,10 +108,10 @@ export function useAuth() {
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
-    if (!error) {
-      setState(prev => ({ ...prev, user: null, profile: null, session: null }));
-      profileLoadedRef.current = false;
-    }
+    // Always clear local state regardless of error to prevent stale UI
+    // The server-side session is cleared by Supabase; local state must reflect that
+    setState(prev => ({ ...prev, user: null, profile: null, session: null, loading: false }));
+    profileLoadedRef.current = false;
     return { error };
   }, []);
 
@@ -143,6 +143,14 @@ export function useAuth() {
       'monthly_budget',
       'theme',
       'notification_preferences',
+      'college_name',
+      'university',
+      'degree',
+      'branch',
+      'academic_year',
+      'current_semester',
+      'roll_number',
+      'enrollment_number',
     ];
     
     for (const key of allowedKeys) {

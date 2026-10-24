@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday } from 'date-fns';
@@ -15,6 +15,7 @@ import {
 import { scheduleEventSchema, ScheduleEventForm, ScheduleEventType } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useToast } from '@productivity-suite/ui';
 
 const eventTypes: { value: ScheduleEventType; label: string; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
   { value: 'class', label: 'Class', icon: GraduationCap, color: 'bg-blue-500' },
@@ -30,12 +31,15 @@ export default function CollegeTimetablePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showImport, setShowImport] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const { data: currentTerm } = useCurrentAcademicTerm();
   const { data: subjects } = useSubjects(currentTerm?.id);
   const { data: weeklySchedule } = useWeeklySchedule(format(weekStart, 'yyyy-MM-dd'));
   const { data: todaySchedule } = useTodaySchedule();
   const { data: holidays } = useHolidays();
+  const { toast } = useToast();
 
   const createEvent = useCreateScheduleEvent();
   const updateEvent = useUpdateScheduleEvent();
@@ -72,8 +76,125 @@ export default function CollegeTimetablePage() {
       setIsModalOpen(false);
       setEditingEvent(null);
       reset();
-    } catch (error) {
+      toast({ type: 'success', title: editingEvent ? 'Event updated' : 'Event created' });
+    } catch (error: any) {
       console.error('Failed to save event:', error);
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to save event' });
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (confirm('Delete this event? This action cannot be undone.')) {
+      try {
+        await deleteEvent.mutateAsync(eventId);
+        toast({ type: 'success', title: 'Event deleted' });
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to delete event' });
+      }
+    }
+  };
+
+  const handleImportFile = async () => {
+    if (!importFile) return;
+    
+    setIsImporting(true);
+    try {
+      const content = await importFile.text();
+      const events: Omit<ScheduleEventForm, 'user_id'>[] = [];
+      
+      if (importFile.name.endsWith('.csv')) {
+        // Parse CSV
+        const lines = content.trim().split('\n');
+        const headers = lines[0].split(',').map((h: string) => h.trim().replace(/"/g, ''));
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map((v: string) => v.trim().replace(/"/g, ''));
+          const row: Record<string, string> = {};
+          headers.forEach((h: string, idx: number) => { row[h] = values[idx] || ''; });
+          
+          if (row.title && row.start_time && row.end_time && row.day_of_week !== undefined) {
+            events.push({
+              title: row.title,
+              description: row.description || '',
+              location: row.location || '',
+              start_time: row.start_time,
+              end_time: row.end_time,
+              day_of_week: parseInt(row.day_of_week, 10),
+              color: row.color || '#3b82f6',
+              is_recurring: row.is_recurring !== 'false',
+              event_type: (row.event_type as ScheduleEventType) || 'class',
+            });
+          }
+        }
+      } else if (importFile.name.endsWith('.ics')) {
+        // Basic ICS parsing
+        const eventBlocks = content.split('BEGIN:VEVENT');
+        for (let i = 1; i < eventBlocks.length; i++) {
+          const block = eventBlocks[i];
+          const getProp = (prop: string) => {
+            const match = block.match(new RegExp(`${prop}:([^\r\n]*)`));
+            return match ? match[1].trim() : '';
+          };
+          
+          const summary = getProp('SUMMARY');
+          const dtstart = getProp('DTSTART');
+          const dtend = getProp('DTEND');
+          const location = getProp('LOCATION');
+          const description = getProp('DESCRIPTION');
+          const rrule = getProp('RRULE');
+          
+          if (summary && dtstart && dtend) {
+            // Parse ICS datetime format (YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS)
+            const parseICSDate = (dateStr: string) => {
+              const clean = dateStr.replace(/Z$/, '').replace(/-/g, '').replace(/:/g, '');
+              if (clean.length >= 15) {
+                return `${clean.slice(0,4)}-${clean.slice(4,6)}-${clean.slice(6,8)}T${clean.slice(9,11)}:${clean.slice(11,13)}:${clean.slice(13,15)}`;
+              }
+              return '';
+            };
+            
+            const startTime = parseICSDate(dtstart);
+            const endTime = parseICSDate(dtend);
+            const dayMatch = dtstart.match(/^(\d{8})T/);
+            
+            if (startTime && endTime && dayMatch) {
+              const date = new Date(`${dayMatch[1].slice(0,4)}-${dayMatch[1].slice(4,6)}-${dayMatch[1].slice(6,8)}`);
+              const dayOfWeek = date.getDay() === 0 ? 6 : date.getDay() - 1; // Convert to 0=Mon
+              
+              events.push({
+                title: summary,
+                description: description || '',
+                location: location || '',
+                start_time: startTime,
+                end_time: endTime,
+                day_of_week: dayOfWeek,
+                color: '#3b82f6',
+                is_recurring: !!rrule,
+                event_type: 'class',
+              });
+            }
+          }
+        }
+      }
+      
+      if (events.length === 0) {
+        toast({ type: 'error', title: 'Error', message: 'No valid events found in file' });
+        return;
+      }
+      
+      // Create events in bulk
+      for (let i = 0; i < events.length; i++) {
+        await createEvent.mutateAsync(events[i]);
+      }
+      
+      toast({ type: 'success', title: 'Success', message: `Imported ${events.length} events` });
+      setShowImport(false);
+      setImportFile(null);
+    } catch (error: any) {
+      console.error('Import failed:', error);
+      toast({ type: 'error', title: 'Error', message: error.message || 'Import failed' });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -108,12 +229,13 @@ export default function CollegeTimetablePage() {
                   <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     <span>{format(new Date(event.start_time), 'h:mm a')} - {format(new Date(event.end_time), 'h:mm a')}</span>
-                    {event.location && <span>• {event.location}</span>}
+                    {event.location && <span>â€¢ {event.location}</span>}
                     {subject && <span className="px-2 py-0.5 bg-primary-100/50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs rounded">{subject.code}</span>}
                   </p>
                 </div>
                 <Badge variant="outline" size="sm" className="capitalize">{event.event_type}</Badge>
                 <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={() => handleEdit(event)} />
+                <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => handleDeleteEvent(event.id)} />
               </div>
             );
           })}
@@ -187,7 +309,7 @@ export default function CollegeTimetablePage() {
           <div>
             <CardTitle>Today</CardTitle>
             <CardDescription>
-              {todaySchedule?.events.length || 0} classes • {todaySchedule?.is_holiday ? `Holiday: ${todaySchedule.holiday_name}` : format(new Date(), 'EEEE, MMMM d')}
+              {todaySchedule?.events.length || 0} classes â€¢ {todaySchedule?.is_holiday ? `Holiday: ${todaySchedule.holiday_name}` : format(new Date(), 'EEEE, MMMM d')}
             </CardDescription>
           </div>
         </CardHeader>
@@ -219,7 +341,7 @@ export default function CollegeTimetablePage() {
                           <span className="text-sm font-medium text-neutral-900 dark:text-white">
                             {format(dayDate, 'd')}
                           </span>
-                          {isHolidayDay && <span className="text-xs text-warning-600 dark:text-warning-400">🎉</span>}
+                          {isHolidayDay && <span className="text-xs text-warning-600 dark:text-warning-400">ðŸŽ‰</span>}
                           {isTodayDay && <span className="text-xs text-primary-600 dark:text-primary-400">Today</span>}
                         </div>
                       </th>
@@ -313,7 +435,7 @@ export default function CollegeTimetablePage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-neutral-900 dark:text-white">{subject.name}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{subject.code} • {subject.credits} credits</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{subject.code} â€¢ {subject.credits} credits</p>
                   </div>
                 </div>
               ))}
@@ -438,7 +560,7 @@ export default function CollegeTimetablePage() {
       {/* Import Modal */}
       <Modal
         isOpen={showImport}
-        onClose={() => setShowImport(false)}
+        onClose={() => { setShowImport(false); setImportFile(null); }}
         title="Import Schedule"
         size="md"
       >
@@ -450,8 +572,13 @@ export default function CollegeTimetablePage() {
             label="File"
             type="file"
             accept=".ics,.csv"
-            onChange={e => e.target.files?.[0] && handleImport(e.target.files[0])}
+            onChange={e => e.target.files?.[0] && setImportFile(e.target.files[0])}
           />
+          {importFile && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Selected: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
+            </p>
+          )}
           <div className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1">
             <p>Supported formats:</p>
             <ul className="list-disc list-inside space-y-1">
@@ -460,8 +587,10 @@ export default function CollegeTimetablePage() {
             </ul>
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => setShowImport(false)}>Cancel</Button>
-            <Button onClick={() => setShowImport(false)}>Import</Button>
+            <Button variant="outline" onClick={() => { setShowImport(false); setImportFile(null); }}>Cancel</Button>
+            <Button onClick={handleImportFile} disabled={!importFile || isImporting} loading={isImporting}>
+              {isImporting ? 'Importing...' : 'Import'}
+            </Button>
           </div>
         </div>
       </Modal>
@@ -469,8 +598,4 @@ export default function CollegeTimetablePage() {
   );
 }
 
-async function handleImport(file: File) {
-  const content = await file.text();
-  // Import logic would go here
-  console.log('Import:', file.name, content.slice(0, 200));
-}
+

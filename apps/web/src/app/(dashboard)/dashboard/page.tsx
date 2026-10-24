@@ -68,7 +68,7 @@ const StatCard = ({ title, value, change, changeLabel, icon: Icon, trend, varian
   };
 
   return (
-    <Card variant="default" padding="md" glass={true} className={cn(variantClasses[variant], 'hover-lift', 'relative', 'overflow-hidden')}>
+    <Card variant="default" padding="md" glass={true} className={cn(variantClasses[variant], 'hover-lift', 'relative', 'overflow-hidden', 'glass-dashboard')}>
       <div className="absolute inset-0 bg-gradient-to-br opacity-5" style={{ background: `linear-gradient(135deg, ${variant === 'primary' ? 'rgba(117, 103, 255, 0.08)' : variant === 'success' ? 'rgba(16, 185, 129, 0.08)' : variant === 'warning' ? 'rgba(245, 158, 11, 0.08)' : variant === 'danger' ? 'rgba(244, 63, 94, 0.08)' : 'rgba(117, 103, 255, 0.08)'}, transparent)` }} />
       <div className="relative flex items-start justify-between">
         <div className="min-w-0">
@@ -221,7 +221,7 @@ export default function DashboardPage() {
         {/* Left Column - Tasks & Routines */}
         <div className="lg:col-span-2 space-y-4">
           {/* Today's Tasks */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle>Today's Tasks</CardTitle>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                   {tasks.slice(0, 5).map(task => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-3 p-3 rounded-xl glass-subtle transition-all duration-200 hover:bg-white/50 dark:hover:bg-neutral-800/50"
+                      className="flex items-center gap-3 p-3 rounded-xl glass-dashboard-subtle transition-all duration-200 hover:bg-white/50 dark:hover:bg-neutral-800/50"
                     >
                       <Button
                         variant="ghost"
@@ -289,7 +289,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Today's Routines */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle>Daily Routines</CardTitle>
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                   {routines.map(routine => (
                     <div
                       key={routine.id}
-                      className="flex items-center gap-3 p-3 rounded-xl glass-subtle transition-all duration-200 hover:bg-white/50 dark:hover:bg-neutral-800/50"
+                      className="flex items-center gap-3 p-3 rounded-xl glass-dashboard-subtle transition-all duration-200 hover:bg-white/50 dark:hover:bg-neutral-800/50"
                     >
                       <div className="w-10 h-10 rounded-xl bg-primary-100/50 dark:bg-primary-900/30 flex items-center justify-center">
                         <Target className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -348,7 +348,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Today's Schedule */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle>Today's Schedule</CardTitle>
@@ -366,7 +366,7 @@ export default function DashboardPage() {
                   {todaySchedule.events.map(event => (
                     <div
                       key={event.id}
-                      className="flex items-center gap-3 p-3 rounded-xl glass-subtle transition-all duration-200 hover:bg-white/50 dark:hover:bg-neutral-800/50"
+                      className="flex items-center gap-3 p-3 rounded-xl glass-dashboard-subtle transition-all duration-200 hover:bg-white/50 dark:hover:bg-neutral-800/50"
                     >
                       <div
                         className="w-2 h-12 rounded-l-lg"
@@ -398,7 +398,7 @@ export default function DashboardPage() {
         {/* Right Column - Quick Actions & Stats */}
         <div className="space-y-4">
           {/* Quick Actions */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover hover-lift">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover hover-lift">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-warning-500" />
@@ -445,7 +445,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Weekly Spending Chart */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover">
             <CardHeader className="pb-3">
               <CardTitle>Weekly Spending</CardTitle>
               <CardDescription>Last 7 days</CardDescription>
@@ -474,7 +474,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Pomodoro Stats */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover">
             <CardHeader className="pb-3">
               <CardTitle>Focus Stats</CardTitle>
               <CardDescription>This week</CardDescription>
@@ -512,7 +512,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Routine Streak */}
-          <Card variant="default" padding="md" glass={true} className="glass-card-hover">
+          <Card variant="default" padding="md" glass={true} className="glass-dashboard-hover">
             <CardHeader className="pb-3">
               <CardTitle>Routine Streaks</CardTitle>
               <CardDescription>Keep the momentum going</CardDescription>

@@ -1,30 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { format, addDays, isBefore, isAfter } from 'date-fns';
-import { Plus, BookOpen, Award, CheckCircle, Edit, Trash2, ChevronRight, Calendar, AlertTriangle, Filter, MoreHorizontal, Download, Flag, Layout, List } from 'lucide-react';
-import Link from 'next/link';
+import { format, isBefore, isAfter } from 'date-fns';
+import { Plus, BookOpen, Award, Edit, Trash2, Calendar, AlertTriangle, Filter, Download, Flag, Layout, List } from 'lucide-react';
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Badge, Input, Select, Modal, Textarea, Tabs, TabsList, TabsTrigger, TabsContent, Progress
+  Card, CardHeader, CardTitle, CardContent,
+  Button, Badge, Input, Select, Modal, Textarea, Tabs, TabsList, TabsTrigger
 } from '@productivity-suite/ui';
 import {
-  useAcademicTasks, useUpcomingAssignments, useUpcomingExams, useCreateAcademicTask,
+  useAcademicTasks, useCreateAcademicTask,
   useUpdateAcademicTask, useDeleteAcademicTask, useSubjects, useCurrentAcademicTerm,
-  AcademicTask, SubjectWithTerm, AcademicTaskType
+  AcademicTask, SubjectWithTerm, AcademicTaskType, taskSchemaBase
 } from '@productivity-suite/core';
-import { taskSchema } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useToast } from '@productivity-suite/ui';
+import { ConfirmationModal } from '@productivity-suite/ui';
 
-const academicTaskSchema = taskSchema.extend({
+const academicTaskSchema = z.object({
+  ...taskSchemaBase.omit({ due_date: true }).shape,
+  due_date: z.string().datetime({ local: true }).optional().nullable(),
   subject_id: z.string().uuid().optional().nullable(),
   academic_type: z.enum(['assignment', 'exam', 'quiz', 'project', 'homework', 'other']).optional().nullable(),
   weight: z.number().min(0).max(100).optional().nullable(),
   score_obtained: z.number().min(0).optional().nullable(),
   max_score: z.number().positive().optional().nullable(),
-  submission_date: z.string().datetime().optional().nullable(),
+  submission_date: z.string().datetime({ local: true }).optional().nullable(),
   is_graded: z.boolean().default(false),
 });
 
@@ -199,6 +201,7 @@ export default function CollegeAssignmentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<AcademicTask | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const handleTabChange = (value: string) => {
     setActiveTab(value as 'all' | 'assignments' | 'exams' | 'upcoming');
@@ -207,19 +210,17 @@ export default function CollegeAssignmentsPage() {
   const { data: currentTerm } = useCurrentAcademicTerm();
   const { data: subjects } = useSubjects(currentTerm?.id);
   const { data: allTasks } = useAcademicTasks({ subject_id: filterSubject || undefined });
-  const { data: upcomingAssignments } = useUpcomingAssignments();
-  const { data: upcomingExams } = useUpcomingExams();
   
   const createTask = useCreateAcademicTask();
   const updateTask = useUpdateAcademicTask();
   const deleteTask = useDeleteAcademicTask();
+  const { toast } = useToast();
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<z.infer<typeof academicTaskSchema>>({
     resolver: zodResolver(academicTaskSchema),
@@ -263,15 +264,30 @@ export default function CollegeAssignmentsPage() {
 
   const onSubmit = async (data: z.infer<typeof academicTaskSchema>) => {
     try {
+      // Extract base task fields for the task hooks
+      const baseTaskData = {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
+        due_date: data.due_date,
+        estimated_minutes: data.estimated_minutes,
+        tags: data.tags,
+        parent_task_id: data.parent_task_id,
+      };
+      
       if (editingTask) {
-        await updateTask.mutateAsync({ id: editingTask.id, updates: data });
+        await updateTask.mutateAsync({ id: editingTask.id, updates: baseTaskData });
+        toast({ type: 'success', title: 'Task updated' });
       } else {
-        await createTask.mutateAsync(data);
+        await createTask.mutateAsync(baseTaskData);
+        toast({ type: 'success', title: 'Task created' });
       }
       setIsModalOpen(false);
       setEditingTask(null);
       reset();
     } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to save task' });
       console.error('Failed to save task:', error);
     }
   };
@@ -296,8 +312,18 @@ export default function CollegeAssignmentsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      deleteTask.mutate(id);
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteTask.mutateAsync(deleteConfirmId);
+      toast({ type: 'success', title: 'Task deleted' });
+    } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to delete task' });
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -465,13 +491,13 @@ export default function CollegeAssignmentsPage() {
         size="lg"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input label="Title" placeholder="Calculus Problem Set 3" error={errors.title?.message} {...register('title')} required />
+          <Input label="Title" placeholder="Calculus Problem Set 3" error={errors.title?.message as string} {...register('title')} required />
           <Textarea label="Description (optional)" placeholder="Chapter 5, problems 1-20" {...register('description')} rows={3} />
           <div className="grid grid-cols-2 gap-4">
             <Select
               label="Subject"
               options={[{ value: '', label: 'No Subject' }, ...(subjects?.map(s => ({ value: s.id, label: `${s.code} - ${s.name}` })) || [])]}
-              error={errors.subject_id?.message}
+              error={errors.subject_id?.message as string}
               {...register('subject_id')}
             />
             <Select
@@ -484,7 +510,7 @@ export default function CollegeAssignmentsPage() {
                 { value: 'quiz', label: 'Quiz' },
                 { value: 'other', label: 'Other' },
               ]}
-              error={errors.academic_type?.message}
+              error={errors.academic_type?.message as string}
               {...register('academic_type')}
               required
             />
@@ -499,7 +525,7 @@ export default function CollegeAssignmentsPage() {
                 { value: 'done', label: 'Done' },
                 { value: 'archived', label: 'Archived' },
               ]}
-              error={errors.status?.message}
+              error={errors.status?.message as string}
               {...register('status')}
               required
             />
@@ -511,14 +537,14 @@ export default function CollegeAssignmentsPage() {
                 { value: 'high', label: 'High' },
                 { value: 'urgent', label: 'Urgent' },
               ]}
-              error={errors.priority?.message}
+              error={errors.priority?.message as string}
               {...register('priority')}
               required
             />
             <Input
               label="Due Date"
               type="datetime-local"
-              error={errors.due_date?.message}
+              error={errors.due_date?.message as string}
               {...register('due_date')}
             />
           </div>
@@ -529,7 +555,7 @@ export default function CollegeAssignmentsPage() {
               min={0}
               max={100}
               step={0.1}
-              error={errors.weight?.message}
+              error={errors.weight?.message as string}
               {...register('weight', { valueAsNumber: true })}
             />
             <Input
@@ -537,7 +563,7 @@ export default function CollegeAssignmentsPage() {
               type="number"
               min={0}
               step={0.1}
-              error={errors.score_obtained?.message}
+              error={errors.score_obtained?.message as string}
               {...register('score_obtained', { valueAsNumber: true })}
             />
             <Input
@@ -545,7 +571,7 @@ export default function CollegeAssignmentsPage() {
               type="number"
               min={0.1}
               step={0.1}
-              error={errors.max_score?.message}
+              error={errors.max_score?.message as string}
               {...register('max_score', { valueAsNumber: true })}
             />
           </div>
@@ -553,7 +579,7 @@ export default function CollegeAssignmentsPage() {
             <Input
               label="Submission Date"
               type="datetime-local"
-              error={errors.submission_date?.message}
+              error={errors.submission_date?.message as string}
               {...register('submission_date')}
             />
             <div className="flex items-center">
@@ -576,6 +602,17 @@ export default function CollegeAssignmentsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteTask.isPending}
+      />
     </div>
   );
 }

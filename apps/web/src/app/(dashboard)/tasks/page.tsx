@@ -7,6 +7,7 @@ import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
   Button, Input, Select, Badge, Modal, Tabs, Dropdown
 } from '@productivity-suite/ui';
+import { useToast } from '@productivity-suite/ui';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useToggleTaskStatus, useTaskStats } from '@productivity-suite/core';
 import { taskSchema, TaskForm, TaskStatus, TaskPriority } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
@@ -41,6 +42,7 @@ export default function TasksPage() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggleStatus = useToggleTaskStatus();
+  const { toast } = useToast();
 
   const {
     register,
@@ -70,8 +72,22 @@ export default function TasksPage() {
       setEditingTask(null);
       reset();
       refetch();
-    } catch (error) {
+      toast({ type: 'success', title: editingTask ? 'Task updated' : 'Task created' });
+    } catch (error: any) {
       console.error('Failed to save task:', error);
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to save task' });
+    }
+  };
+
+  const handleDelete = async (taskId: string) => {
+    if (confirm('Delete this task? This action cannot be undone.')) {
+      try {
+        await deleteTask.mutateAsync(taskId);
+        toast({ type: 'success', title: 'Task deleted' });
+        refetch();
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to delete task' });
+      }
     }
   };
 
@@ -203,6 +219,13 @@ export default function TasksPage() {
                             {task.tags.length > 1 && <span className="ml-1">+{task.tags.length - 1}</span>}
                           </Badge>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<MoreHorizontal className="w-4 h-4" />}
+                          onClick={e => { e.stopPropagation(); handleDelete(task.id); }}
+                          className="ml-auto"
+                        />
                       </div>
                     </div>
                   ))}
@@ -283,7 +306,7 @@ export default function TasksPage() {
                         ))}
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" icon={<MoreHorizontal className="w-4 h-4" />} onClick={e => { e.stopPropagation(); }} />
+                    <Button variant="ghost" size="sm" icon={<MoreHorizontal className="w-4 h-4" />} onClick={e => { e.stopPropagation(); handleDelete(task.id); }} />
                   </div>
                 ))}
               </div>

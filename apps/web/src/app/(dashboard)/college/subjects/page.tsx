@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { Plus, BookOpen, GraduationCap, Edit, Trash2, Target, ChevronRight, Clock, Calendar, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
+import { Plus, BookOpen, Edit, Trash2, Target, Clock, AlertTriangle } from 'lucide-react';
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
+  Card, CardHeader, CardTitle, CardDescription, CardContent,
   Button, Badge, Progress, Modal, Input, Select, Textarea
 } from '@productivity-suite/ui';
 import {
   useSubjects, useCreateSubject, useUpdateSubject, useDeleteSubject,
-  useSubjectWithAttendance, useAcademicTerms, SubjectWithTerm, SubjectForm, AcademicTerm
+  useSubjectWithAttendance, useAcademicTerms, SubjectWithTerm, SubjectForm
 } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useToast } from '@productivity-suite/ui';
+import { ConfirmationModal } from '@productivity-suite/ui';
 
 const subjectSchema = z.object({
   academic_term_id: z.string().uuid(),
@@ -27,11 +27,6 @@ const subjectSchema = z.object({
   description: z.string().max(500).optional(),
   attendance_threshold: z.number().int().min(0).max(100).default(75),
 });
-
-const presetColors = [
-  '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899',
-  '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#a855f7',
-];
 
 const presetIcons = ['📚', '🧮', '🔬', '💻', '📝', '🎨', '🎵', '🏃', '🌍', '⚖️', '🧠', '💰'];
 
@@ -112,6 +107,7 @@ export default function CollegeSubjectsPage() {
   const [activeTermId, setActiveTermId] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<SubjectWithTerm | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const { data: terms } = useAcademicTerms();
   const { data: subjects, isLoading } = useSubjects(activeTermId);
@@ -120,6 +116,7 @@ export default function CollegeSubjectsPage() {
   const createSubject = useCreateSubject();
   const updateSubject = useUpdateSubject();
   const deleteSubject = useDeleteSubject();
+  const { toast } = useToast();
 
   const {
     register,
@@ -152,13 +149,16 @@ export default function CollegeSubjectsPage() {
     try {
       if (editingSubject) {
         await updateSubject.mutateAsync({ id: editingSubject.id, updates: data });
+        toast({ type: 'success', title: 'Subject updated' });
       } else {
         await createSubject.mutateAsync(data);
+        toast({ type: 'success', title: 'Subject created' });
       }
       setIsModalOpen(false);
       setEditingSubject(null);
       reset();
     } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to save subject' });
       console.error('Failed to save subject:', error);
     }
   };
@@ -178,8 +178,18 @@ export default function CollegeSubjectsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this subject? This will also delete all attendance records.')) {
-      deleteSubject.mutate(id);
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteSubject.mutateAsync(deleteConfirmId);
+      toast({ type: 'success', title: 'Subject deleted' });
+    } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to delete subject' });
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -329,6 +339,17 @@ export default function CollegeSubjectsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Subject"
+        description="Are you sure you want to delete this subject? This will also delete all attendance records. This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteSubject.isPending}
+      />
     </div>
   );
 }

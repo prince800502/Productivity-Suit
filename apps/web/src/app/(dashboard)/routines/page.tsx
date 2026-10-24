@@ -275,7 +275,7 @@ export default function RoutinesPage() {
                       aria-label={routine.is_active ? 'Disable routine' : 'Enable routine'}
                     />
                     <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={e => { e.stopPropagation(); handleEdit(routine); }} />
-                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => { if (confirm('Delete this routine?')) deleteRoutine.mutate(routine.id); }} />
+                    <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={e => { e.stopPropagation(); if (confirm('Delete this routine?')) deleteRoutine.mutate(routine.id); }} />
                   </div>
                 </div>
               ))}

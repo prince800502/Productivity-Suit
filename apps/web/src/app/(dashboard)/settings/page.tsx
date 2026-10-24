@@ -14,6 +14,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@productivity-suite/ui';
+import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useExpenses } from '@productivity-suite/core';
 import { useBudgets, useSavingsGoals } from '@productivity-suite/core';
 import { useGoals } from '@productivity-suite/core';
@@ -65,6 +67,8 @@ const currencies = [
 
 export default function SettingsPage() {
   const { user, profile, updateProfile: updateProfileHook, profileLoaded } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { mode, setMode } = useTheme();
   const [activeTab, setActiveTab] = useState('profile');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -838,7 +842,7 @@ export default function SettingsPage() {
                   <p className="font-medium text-neutral-900 dark:text-white">Sign Out All Sessions</p>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">You will need to sign in again on all devices</p>
                 </div>
-                <Button variant="outline" icon={<LogOut className="w-4 h-4" />} onClick={async () => { await signOut(); toast({ type: 'success', title: 'Success', message: 'Signed out everywhere' }); }}>
+                <Button variant="outline" icon={<LogOut className="w-4 h-4" />} onClick={async () => { const { error } = await signOut(); if (!error) { toast({ type: 'success', title: 'Success', message: 'Signed out everywhere' }); queryClient.clear(); router.replace('/'); } else { toast({ type: 'error', title: 'Error', message: error.message || 'Failed to sign out' }); } }}>
                   Sign Out Everywhere
                 </Button>
               </div>

@@ -6,6 +6,7 @@ import { ToastProvider } from '@productivity-suite/ui';
 import { initializeSupabaseClient, setSharedSupabaseClient } from '@productivity-suite/core';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
 import { useState, ReactNode } from 'react';
+import { SpaceVideoBackground } from '@/components/SpaceVideoBackground';
 
 // Initialize Supabase client SYNCHRONOUSLY at module level to ensure
 // it's available before any hooks try to access it.
@@ -52,6 +53,8 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultMode="system">
         <ToastProvider>
+          {/* Global space video background - dark mode only */}
+          <SpaceVideoBackground />
           {children}
         </ToastProvider>
       </ThemeProvider>

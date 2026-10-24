@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, isToday, isBefore, isAfter } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Clock, AlertCircle, MinusCircle, Plus, Download, MoreHorizontal, Layout, List, BookOpen } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isToday } from 'date-fns';
+import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Clock, AlertCircle, MinusCircle, Download, MoreHorizontal, BookOpen, Calculator } from 'lucide-react';
 import {
-  Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Badge, Progress, Dropdown, ScrollArea
+  Card, CardHeader, CardTitle, CardDescription, CardContent,
+  Button, Badge, Dropdown, ScrollArea
 } from '@productivity-suite/ui';
 import {
   useSubjects, useAttendanceRecords, useAttendanceSummary, useCreateAttendanceRecord,
@@ -14,6 +14,9 @@ import {
 } from '@productivity-suite/core';
 import { useCurrentAcademicTerm } from '@productivity-suite/core';
 import { saveAs } from 'file-saver';
+import Link from 'next/link';
+import { useToast } from '@productivity-suite/ui';
+import { ConfirmationModal } from '@productivity-suite/ui';
 
 const statusConfig: Record<AttendanceStatus, { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bgColor: string }> = {
   present: { label: 'Present', icon: CheckCircle, color: 'text-success-600 dark:text-success-400', bgColor: 'bg-success-100 dark:bg-success-900/30' },
@@ -53,14 +56,12 @@ function SubjectSelector({ subjects, value, onChange, placeholder, className }: 
 function AttendanceDayCell({ 
   date, 
   record, 
-  subject, 
   onSetStatus,
   isCurrentMonth,
   isToday: isTodayDate
 }: {
   date: Date;
   record: AttendanceRecord | undefined;
-  subject: SubjectWithTerm | null;
   onSetStatus: (status: AttendanceStatus) => void;
   isCurrentMonth: boolean;
   isToday: boolean;
@@ -130,6 +131,7 @@ export default function CollegeAttendancePage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
   const [showSessionNumber, setShowSessionNumber] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const { data: currentTerm } = useCurrentAcademicTerm();
   const { data: subjects } = useSubjects(currentTerm?.id);
@@ -140,6 +142,7 @@ export default function CollegeAttendancePage() {
   const createRecord = useCreateAttendanceRecord();
   const updateRecord = useUpdateAttendanceRecord();
   const deleteRecord = useDeleteAttendanceRecord();
+  const { toast } = useToast() as { toast: (options: { type: 'success' | 'error' | 'warning' | 'info' | 'default'; title: string; message?: string }) => string; dismiss: (id: string) => void; dismissAll: () => void };
 
   const subject = subjectWithAttendance;
   const recordsMap = new Map(attendanceRecords?.map(r => [r.date, r]) || []);
@@ -164,14 +167,26 @@ export default function CollegeAttendancePage() {
           class_session_number: showSessionNumber ? 1 : null 
         });
       }
+      toast({ type: 'success', title: 'Attendance updated', message: `Marked as ${status}` });
     } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to update attendance' });
       console.error('Failed to update attendance:', error);
     }
   };
 
   const handleDeleteRecord = async (recordId: string) => {
-    if (confirm('Delete this attendance record?')) {
-      await deleteRecord.mutateAsync({ id: recordId, subjectId: selectedSubjectId });
+    setDeleteConfirmId(recordId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteRecord.mutateAsync({ id: deleteConfirmId, subjectId: selectedSubjectId });
+      toast({ type: 'success', title: 'Deleted', message: 'Attendance record removed' });
+    } catch (error) {
+      toast({ type: 'error', title: 'Error', message: 'Failed to delete record' });
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -225,7 +240,6 @@ export default function CollegeAttendancePage() {
   const attendedCount = attendanceRecords?.filter(r => r.status === 'present' || r.status === 'late').length || 0;
   const totalCount = attendanceRecords?.filter(r => r.status !== 'excused').length || 0;
   const percentage = totalCount > 0 ? (attendedCount / totalCount) * 100 : 100;
-  const isBelowThreshold = subject && percentage < subject.attendance_threshold;
 
   return (
     <div className="space-y-6">
@@ -243,6 +257,9 @@ export default function CollegeAttendancePage() {
             placeholder="Switch subject..."
             className="w-64"
           />
+          <Button variant="outline" size="sm" icon={<Calculator className="w-4 h-4" />} asChild>
+            <Link href="/college/attendance/calculator">Calculator</Link>
+          </Button>
           <Button variant="outline" size="sm" icon={<Download className="w-4 h-4" />} onClick={handleExport}>
           Export
         </Button>
@@ -329,7 +346,6 @@ export default function CollegeAttendancePage() {
                     key={date.toISOString()}
                     date={date}
                     record={record}
-                    subject={subject || null}
                     onSetStatus={status => handleSetStatus(date, status)}
                     isCurrentMonth={true}
                     isToday={isToday(date)}
@@ -446,6 +462,17 @@ export default function CollegeAttendancePage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmationModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Attendance Record"
+        description="Are you sure you want to delete this attendance record? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteRecord.isPending}
+      />
     </div>
   );
 }

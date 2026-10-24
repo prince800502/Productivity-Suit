@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@productivity-suite/ui';
+import { Button, Input, Card, CardContent, CardFooter } from '@productivity-suite/ui';
 import { Mail, Lock, Eye, EyeOff, Loader2, Sparkles, ArrowRight, CheckCircle, Shield, Zap, Target, Layers } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
 import { useToast } from '@productivity-suite/ui';
@@ -119,15 +119,15 @@ export default function LoginPageClient() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center bg-obsidian-950 px-4 py-12">
         <div className="w-full max-w-[1200px] mx-auto">
           <SpaceBackground reducedMotion />
           <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-            <div className="animate-pulse glass-card w-full max-w-md p-8 text-center">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
+            <div className="animate-pulse glass-auth-card w-full max-w-md p-8 text-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-champagne-500 to-champagne-600 flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-6 h-6 text-obsidian-950" />
               </div>
-              <p className="text-neutral-400">Loading...</p>
+              <p className="text-obsidian-400">Loading...</p>
             </div>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function LoginPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 relative overflow-hidden">
+    <div className="min-h-screen bg-obsidian-950 relative overflow-hidden">
       {/* Cinematic Space Background */}
       <SpaceBackground />
       
@@ -150,8 +150,8 @@ export default function LoginPageClient() {
               <div className="max-w-xl">
                 {/* Brand Mark */}
                 <Link href="/" className="inline-flex items-center gap-3 mb-10" aria-label="Productivity Suite Home">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 flex items-center justify-center shadow-[0_8px_32px_rgba(117,103,255,0.4)]">
-                    <Sparkles className="w-8 h-8 text-white" />
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-champagne-500 to-champagne-600 flex items-center justify-center shadow-[0_8px_32px_rgba(198,165,108,0.4)]">
+                    <Sparkles className="w-8 h-8 text-obsidian-950" />
                   </div>
                   <span className="font-display text-3xl font-bold text-white">
                     Productivity Suite
@@ -159,7 +159,7 @@ export default function LoginPageClient() {
                 </Link>
 
                 {/* Tagline */}
-                <p className="text-lg text-primary-300/80 font-medium mb-6 tracking-wide uppercase">
+                <p className="text-lg text-champagne-300/80 font-medium mb-6 tracking-wide uppercase">
                   Your Personal Life OS
                 </p>
 
@@ -167,13 +167,13 @@ export default function LoginPageClient() {
                 <h1 className="font-display text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6">
                   Your universe.
                   <br />
-                  <span className="bg-gradient-to-r from-primary-300 via-secondary-300 to-tertiary-300 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-champagne-300 via-champagne-400 to-champagne-500 bg-clip-text text-transparent">
                     Your productivity.
                   </span>
                 </h1>
 
                 {/* Supporting Description */}
-                <p className="text-xl text-neutral-300/70 leading-relaxed mb-10 max-w-lg">
+                <p className="text-xl text-obsidian-300/70 leading-relaxed mb-10 max-w-lg">
                   Bring tasks, finances, routines, goals, and focus together in one 
                   beautifully designed command center. Built for how you actually work.
                 </p>
@@ -183,7 +183,7 @@ export default function LoginPageClient() {
                   {features.map((feature, index) => (
                     <div 
                       key={feature.title} 
-                      className="flex items-start gap-4 glass-card p-4 rounded-xl border-primary-500/10 hover:border-primary-500/30 transition-all duration-300 animate-fade-in animate-slide-up stagger-container"
+                      className="flex items-start gap-4 glass-auth p-4 rounded-xl border-obsidian-700/50 hover:border-champagne-500/30 transition-all duration-300 animate-fade-in animate-slide-up stagger-container"
                       style={{ animationDelay: `${(index + 1) * 100}ms` }}
                     >
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${feature.color}`}>
@@ -191,16 +191,16 @@ export default function LoginPageClient() {
                       </div>
                       <div className="pt-1">
                         <h3 className="font-semibold text-white text-base">{feature.title}</h3>
-                        <p className="text-sm text-neutral-400 mt-0.5">{feature.description}</p>
+                        <p className="text-sm text-obsidian-400 mt-0.5">{feature.description}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Trust Indicators */}
-                <div className="mt-12 flex flex-wrap gap-6 text-sm text-neutral-500">
+                <div className="mt-12 flex flex-wrap gap-6 text-sm text-obsidian-500">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary-500/80" />
+                    <Shield className="w-4 h-4 text-champagne-500/80" />
                     <span>End-to-end encryption</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function LoginPageClient() {
                     <span>Local-first data</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500/80" />
+                    <Zap className="w-4 h-4 text-champagne-500/80" />
                     <span>Offline ready</span>
                   </div>
                 </div>
@@ -217,22 +217,22 @@ export default function LoginPageClient() {
 
             {/* RIGHT SIDE: Login Panel */}
             <div className="relative z-20 w-full max-w-md mx-auto lg:mx-0 animate-fade-in animate-slide-up stagger-2">
-              <div className="glass-strong rounded-3xl p-6 lg:p-8 xl:p-10 shadow-[0_24px_64px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(120,113,255,0.15),inset_0_-1px_0_rgba(0,0,0,0.2)] border-[rgba(120,113,255,0.25)] backdrop-blur-2xl relative overflow-hidden">
+              <div className="glass-auth rounded-3xl p-6 lg:p-8 xl:p-10 shadow-[0_24px_64px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(198,165,108,0.1),inset_0_-1px_0_rgba(0,0,0,0.3)] border-[rgba(198,165,108,0.15)] backdrop-blur-2xl relative overflow-hidden">
                 {/* Subtle top glow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-px bg-gradient-to-r from-transparent via-primary-500/40 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-px bg-gradient-to-r from-transparent via-champagne-500/40 to-transparent pointer-events-none" />
                 
                 {/* Brand Header */}
                 <div className="text-center mb-8">
                   <Link href="/" className="inline-flex items-center gap-2 mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-[0_8px_32px_rgba(117,103,255,0.4)]">
-                      <Sparkles className="w-7 h-7 text-white" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-champagne-500 to-champagne-600 flex items-center justify-center shadow-[0_8px_32px_rgba(198,165,108,0.4)]">
+                      <Sparkles className="w-7 h-7 text-obsidian-950" />
                     </div>
                     <span className="font-display text-2xl font-bold text-white">
                       Productivity Suite
                     </span>
                   </Link>
                   <h1 className="text-2xl font-bold text-white mb-2">Sign In</h1>
-                  <p className="text-neutral-400">
+                  <p className="text-obsidian-400">
                     Enter your credentials to access your universe
                   </p>
                 </div>
@@ -253,6 +253,7 @@ export default function LoginPageClient() {
                           autoComplete="email"
                           disabled={isLoading}
                           className="h-12 text-base"
+                          premium
                         />
                       </div>
 
@@ -269,11 +270,12 @@ export default function LoginPageClient() {
                             autoComplete="current-password"
                             disabled={isLoading}
                             className="h-12 text-base pr-14"
+                            premium
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-[38px] text-neutral-500 hover:text-neutral-200 transition-colors duration-200 p-1"
+                            className="absolute right-4 top-[38px] text-obsidian-500 hover:text-champagne-400 transition-colors duration-200 p-1"
                             aria-label={showPassword ? 'Hide password' : 'Show password'}
                             disabled={isLoading}
                           >
@@ -287,11 +289,11 @@ export default function LoginPageClient() {
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input 
                             type="checkbox" 
-                            className="w-4 h-4 rounded border-neutral-600/50 bg-neutral-900/50 text-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-950 accent-primary-500" 
+                            className="w-4 h-4 rounded border-obsidian-600/50 bg-obsidian-900/50 text-champagne-500 focus:ring-2 focus:ring-champagne-500 focus:ring-offset-2 focus:ring-offset-obsidian-950 accent-champagne-500" 
                           />
-                          <span className="text-sm text-neutral-300">Remember me</span>
+                          <span className="text-sm text-obsidian-300">Remember me</span>
                         </label>
-                        <Link href="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">
+                        <Link href="/forgot-password" className="text-sm text-champagne-600 hover:text-champagne-500 transition-colors">
                           Forgot password?
                         </Link>
                       </div>
@@ -302,7 +304,7 @@ export default function LoginPageClient() {
                         className="w-full h-12 text-base font-semibold"
                         size="lg" 
                         loading={isLoading}
-                        variant="primary"
+                        variant="premium"
                       >
                         {isLoading ? (
                           <>
@@ -323,10 +325,10 @@ export default function LoginPageClient() {
                 {/* Divider */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-neutral-800/50" />
+                    <div className="w-full border-t border-obsidian-700/50" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-neutral-950/50 text-neutral-500 backdrop-blur-sm">
+                    <span className="px-4 bg-obsidian-900/50 text-obsidian-500 backdrop-blur-sm">
                       Or continue with
                     </span>
                   </div>
@@ -369,7 +371,7 @@ export default function LoginPageClient() {
                     size="md"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                     </svg>
                     GitHub
                   </Button>
@@ -378,9 +380,9 @@ export default function LoginPageClient() {
 
               {/* Sign Up Link */}
               <CardFooter className="pt-6 px-0">
-                <p className="text-center text-sm text-neutral-400">
+                <p className="text-center text-sm text-obsidian-400">
                   Don't have an account?{' '}
-                  <Link href="/signup" className="text-primary-400 hover:text-primary-300 font-semibold transition-colors">
+                  <Link href="/signup" className="text-champagne-400 hover:text-champagne-300 font-semibold transition-colors">
                     Create one free
                     <ArrowRight className="w-4 h-4 ml-1 inline-block" />
                   </Link>

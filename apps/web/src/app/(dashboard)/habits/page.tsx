@@ -3,15 +3,16 @@
 import React from 'react';
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, subDays } from 'date-fns';
-import { Plus, Target, CheckCircle, RotateCcw, Trash2, Edit, Calendar, ChevronLeft, ChevronRight, X, Flame, Undo2 } from 'lucide-react';
+import { Plus, Target, CheckCircle, RotateCcw, Trash2, Edit, Calendar, ChevronLeft, ChevronRight, X, Flame, Undo2, MoreHorizontal, Archive, SkipForward } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
-  Button, Badge, Input, Select, Modal, Textarea, Switch, Tabs
+  Button, Badge, Input, Select, Modal, Textarea, Switch, Tabs, Dropdown
 } from '@productivity-suite/ui';
 import { useHabits, useCreateHabit, useUpdateHabit, useDeleteHabit, useCompleteHabit, useUndoHabitCompletion, useHabitStreak, useHabitSkips, useSkipHabit, useUndoHabitSkip, useArchiveHabit, useRestoreHabit, useHabitStats, useTodayHabits, HabitForm, HabitCompletionForm, HabitSkipForm } from '@productivity-suite/core';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useToast } from '@productivity-suite/ui';
 
 const habitSchema = z.object({
   name: z.string().min(1).max(50),
@@ -63,7 +64,6 @@ function TodayHabitsList({ todayHabits, handleCompleteHabit, handleUndoCompletio
               size="lg"
               className="h-12 w-12 p-0"
               onClick={() => isComplete ? handleUndoCompletion(th.habit.id) : handleCompleteHabit(th.habit.id)}
-              disabled={isComplete}
               aria-label={isComplete ? 'Mark incomplete' : 'Mark complete'}
             >
               {isComplete ? (
@@ -104,7 +104,7 @@ function TodayHabitsList({ todayHabits, handleCompleteHabit, handleUndoCompletio
   );
 }
 
-function AllHabitsList({ habits, habitsLoading, handleEdit, deleteHabit, selectedDays, setSelectedDays }: any) {
+function AllHabitsList({ habits, habitsLoading, handleEdit, deleteHabit, handleSkipHabit, handleArchive, handleRestore, selectedDays, setSelectedDays }: any) {
   if (habitsLoading) {
     return (
       <div className="space-y-3">
@@ -116,14 +116,17 @@ function AllHabitsList({ habits, habitsLoading, handleEdit, deleteHabit, selecte
   if (habits && habits.length > 0) {
     return (
       <div className="space-y-3">
-        {habits.map((habit: { id: string; color: string; icon?: string; name: string; frequency: string; times_per_period: number; description?: string; streak_count?: number; reminder_time?: string }) => (
+        {habits.map((habit: { id: string; color: string; icon?: string; name: string; frequency: string; times_per_period: number; description?: string; streak_count?: number; reminder_time?: string; archived_at?: string | null }) => (
           <div key={habit.id} className="flex items-center gap-4 p-4 rounded-xl glass-card hover:shadow-glass-hover transition-shadow">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: habit.color }}>
               {habit.icon ? <span className="text-xl">{habit.icon}</span> : <Target className="w-6 h-6" />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-medium text-neutral-900 dark:text-white">{habit.name}</h3>
+                <h3 className={`font-medium ${!!habit.archived_at ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-white'}`}>
+                  {habit.name}
+                </h3>
+                {habit.archived_at && <Badge variant="secondary" size="sm">Archived</Badge>}
                 <Badge variant={habit.frequency === 'daily' ? 'primary' : habit.frequency === 'weekly' ? 'secondary' : 'outline'} size="sm">
                   {habit.frequency === 'daily' ? 'Daily' : habit.frequency === 'weekly' ? 'Weekly' : 'Custom'}
                 </Badge>
@@ -146,8 +149,32 @@ function AllHabitsList({ habits, habitsLoading, handleEdit, deleteHabit, selecte
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={() => handleEdit(habit)} />
-              <Button variant="ghost" size="sm" icon={<Trash2 className="w-4 h-4" />} onClick={() => { if (confirm('Delete this habit?')) deleteHabit.mutate(habit.id); }} />
+              <Button variant="ghost" size="sm" icon={<Edit className="w-4 h-4" />} onClick={() => handleEdit(habit)} disabled={!!habit.archived_at} />
+              <Dropdown
+                trigger={
+                  <Button variant="ghost" size="sm" icon={<MoreHorizontal className="w-4 h-4" />} />
+                }
+                items={[
+                  { label: habit.archived_at ? 'Restore' : 'Archive', value: habit.archived_at ? 'restore' : 'archive', icon: habit.archived_at ? <RotateCcw className="w-4 h-4" /> : <Archive className="w-4 h-4" /> },
+                  { label: 'Skip Today', value: 'skip', icon: <SkipForward className="w-4 h-4" /> },
+                  { divider: true },
+                  { label: 'Delete', value: 'delete', icon: <Trash2 className="w-4 h-4" />, danger: true },
+                ]}
+                onSelect={value => {
+                  if (value === 'delete') {
+                    if (confirm('Delete this habit? This action cannot be undone.')) {
+                      deleteHabit.mutate(habit.id);
+                    }
+                  } else if (value === 'archive') {
+                    handleArchive(habit.id);
+                  } else if (value === 'restore') {
+                    handleRestore(habit.id);
+                  } else if (value === 'skip') {
+                    handleSkipHabit(habit.id);
+                  }
+                }}
+                align="right"
+              />
             </div>
           </div>
         ))}
@@ -255,6 +282,7 @@ export default function HabitsPage() {
   const { data: todayHabits } = useTodayHabits();
   const { data: allHabitsStats } = useHabitStats(selectedHabitId || '');
   const { data: heatmapData } = useHabitStats(selectedHabitId || '');
+  const { toast } = useToast();
 
   const heatmapArray = heatmapData?.heatmap_data || [];
 
@@ -297,8 +325,10 @@ export default function HabitsPage() {
       setSelectedDays([]);
       reset();
       refetch();
-    } catch (error) {
+      toast({ type: 'success', title: editingHabit ? 'Habit updated' : 'Habit created' });
+    } catch (error: any) {
       console.error('Failed to save habit:', error);
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to save habit' });
     }
   };
 
@@ -321,35 +351,65 @@ export default function HabitsPage() {
   };
 
   const handleCompleteHabit = async (habitId: string, date: string = format(new Date(), 'yyyy-MM-dd')) => {
-    await completeHabit.mutateAsync({ habit_id: habitId, date, count: 1 });
-    refetch();
+    try {
+      await completeHabit.mutateAsync({ habit_id: habitId, date, count: 1 });
+      refetch();
+      toast({ type: 'success', title: 'Habit completed' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to complete habit' });
+    }
   };
 
   const handleUndoCompletion = async (habitId: string, date: string = format(new Date(), 'yyyy-MM-dd')) => {
-    await undoHabitCompletion.mutateAsync({ habitId, date });
-    refetch();
+    try {
+      await undoHabitCompletion.mutateAsync({ habitId, date });
+      refetch();
+      toast({ type: 'success', title: 'Completion undone' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to undo completion' });
+    }
   };
 
   const handleSkipHabit = async (habitId: string, date: string = format(new Date(), 'yyyy-MM-dd')) => {
-    await skipHabit.mutateAsync({ habit_id: habitId, date, reason: '' });
-    refetch();
+    try {
+      await skipHabit.mutateAsync({ habit_id: habitId, date, reason: '' });
+      refetch();
+      toast({ type: 'success', title: 'Habit skipped' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to skip habit' });
+    }
   };
 
   const handleUndoSkip = async (habitId: string, date: string = format(new Date(), 'yyyy-MM-dd')) => {
-    await undoHabitSkip.mutateAsync({ habitId, date });
-    refetch();
+    try {
+      await undoHabitSkip.mutateAsync({ habitId, date });
+      refetch();
+      toast({ type: 'success', title: 'Skip undone' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to undo skip' });
+    }
   };
 
   const handleArchive = async (id: string) => {
     if (confirm('Archive this habit?')) {
-      await archiveHabit.mutateAsync(id);
-      refetch();
+      try {
+        await archiveHabit.mutateAsync(id);
+        refetch();
+        toast({ type: 'success', title: 'Habit archived' });
+      } catch (error: any) {
+        toast({ type: 'error', title: 'Error', message: error.message || 'Failed to archive habit' });
+      }
     }
   };
 
   const handleRestore = async (id: string) => {
-    await restoreHabit.mutateAsync(id);
-    refetch();
+    try {
+      await restoreHabit.mutateAsync(id);
+      refetch();
+      toast({ type: 'success', title: 'Habit restored' });
+    } catch (error: any) {
+      toast({ type: 'error', title: 'Error', message: error.message || 'Failed to restore habit' });
+    }
   };
 
   return (
@@ -405,6 +465,9 @@ export default function HabitsPage() {
                 habitsLoading={habitsLoading} 
                 handleEdit={handleEdit} 
                 deleteHabit={deleteHabit} 
+                handleSkipHabit={handleSkipHabit}
+                handleArchive={handleArchive}
+                handleRestore={handleRestore}
                 selectedDays={selectedDays} 
                 setSelectedDays={setSelectedDays}
               />

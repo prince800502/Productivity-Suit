@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Button } from '@productivity-suite/ui';
 import { 
   Wallet, CheckSquare, Timer, Target, Calendar, BarChart3, 
-  Moon, Sun, Shield, Zap, Sparkles, ArrowRight 
+  Moon, Sun, Shield, Zap, Sparkles, ArrowRight, Zap as ZapIcon
 } from 'lucide-react';
 
 const features = [
@@ -47,7 +47,7 @@ const stats = [
 
 export default function HomePageContent() {
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <div className="min-h-screen bg-neutral-50 dark:bg-transparent">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-neutral-200 dark:border-neutral-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -100,7 +100,7 @@ export default function HomePageContent() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
               <Link href="/signup">
-                <Button size="lg" className="w-full sm:w-auto gap-2">
+                <Button size="lg" className="w-full sm:w-auto gap-2" variant="premium">
                   Start Free — No Credit Card
                   <ArrowRight className="w-5 h-5" />
                 </Button>
@@ -277,16 +277,16 @@ export default function HomePageContent() {
             {features.map((feature, index) => (
               <div
                 key={feature.title}
-                className="glass-card p-6 card-hover animate-slide-up"
+                className="glass-auth p-6 card-hover animate-slide-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-champagne-500 to-champagne-600 flex items-center justify-center mb-4">
+                  <feature.icon className="w-6 h-6 text-obsidian-950" />
                 </div>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-white mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-neutral-600 dark:text-neutral-400">
+                <p className="text-obsidian-300/70">
                   {feature.description}
                 </p>
               </div>
@@ -301,10 +301,10 @@ export default function HomePageContent() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             {stats.map((stat, index) => (
               <div key={stat.label} className="text-center animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
-                <div className="text-4xl sm:text-5xl lg:text-6xl font-bold gradient-text mb-2">
+                <div className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-champagne-300 via-champagne-400 to-champagne-500 bg-clip-text text-transparent mb-2">
                   {stat.value}
                 </div>
-                <div className="text-neutral-600 dark:text-neutral-400 font-medium">
+                <div className="text-obsidian-300/70 font-medium">
                   {stat.label}
                 </div>
               </div>
@@ -325,7 +325,7 @@ export default function HomePageContent() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/signup">
-                <Button size="lg" className="w-full sm:w-auto bg-white text-neutral-900 hover:bg-neutral-100 gap-2">
+                <Button size="lg" className="w-full sm:w-auto gap-2" variant="premium">
                   Start Your Free Trial
                   <ArrowRight className="w-5 h-5" />
                 </Button>

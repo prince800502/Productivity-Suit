@@ -2,7 +2,7 @@ import { HTMLAttributes, forwardRef } from 'react';
 import { cn } from '../utils';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'outlined' | 'glass' | 'strong' | 'subtle';
+  variant?: 'default' | 'elevated' | 'outlined' | 'glass' | 'strong' | 'subtle' | 'premium';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
   glass?: boolean;
@@ -11,8 +11,8 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ variant = 'default', padding = 'md', hover = false, glass: isGlass = true, className, children, ...props }, ref) => {
     const variants = {
-      default: isGlass 
-        ? 'glass-card' 
+      default: isGlass
+        ? 'glass-card'
         : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800',
       elevated: isGlass
         ? 'glass-card shadow-glass-elevated'
@@ -21,6 +21,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       glass: 'glass-card',
       strong: 'glass-strong',
       subtle: 'glass-subtle',
+      premium: 'bg-obsidian-900/80 dark:bg-obsidian-950/80 border-obsidian-700/50 dark:border-obsidian-800/50 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(198,165,108,0.1),inset_0_-1px_0_rgba(0,0,0,0.2)]',
     };
 
     const paddings = {
